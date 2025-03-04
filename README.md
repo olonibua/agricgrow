@@ -1,36 +1,160 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgriGrow Finance
 
-## Getting Started
+## Harvest-Cycle-Aligned Microloans for Nigerian Farmers
 
-First, run the development server:
+AgriGrow Finance is a platform that connects microfinance institutions (MFIs) with smallholder farmers in Nigeria, providing loans that align with harvest cycles and using AI to assess risk.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+![AgriGrow Finance](https://placeholder-for-agrigrow-logo.com/logo.png)
+
+## 🌱 Overview
+
+AgriGrow Finance addresses the unique challenges faced by smallholder farmers in Nigeria by:
+
+1. **Aligning loan repayments with harvest cycles** - Ensuring farmers can repay when they have income
+2. **Using AI for risk assessment** - Analyzing weather data, crop prices, and farm details for fair evaluations
+3. **Providing MFIs with agricultural intelligence** - Helping loan officers make informed decisions
+4. **Simplifying the loan application process** - Making financing accessible to farmers
+
+## 🚀 Features
+
+### For Farmers
+
+- **Loan Application Portal**: Simple, accessible interface for applying for agricultural loans
+- **Dashboard**: Track application status, loan details, and repayment schedules
+- **Crop Calendar**: Access information about optimal planting and harvesting times
+- **Market Insights**: View current crop prices and trends
+
+### For Microfinance Institutions
+
+- **Comprehensive Dashboard**: Manage and review loan applications
+- **AI-Powered Risk Assessment**: Get intelligent risk scores based on multiple factors
+- **Crop Viability Analysis**: Evaluate if the proposed farming project aligns with seasonal patterns
+- **Analytics**: Track portfolio performance, crop distribution, and risk profiles
+- **Weather Data Integration**: Access current and historical weather data for informed decisions
+
+## 💻 Technology Stack
+
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **UI Components**: shadcn/ui, Lucide React icons
+- **Data Visualization**: Recharts
+- **Backend Services**: Appwrite (Database, Authentication, Storage)
+- **AI/ML**: OpenAI API for risk assessment
+- **Data Scraping**: Cheerio for weather data collection
+- **Email**: Resend for notifications
+
+## 🛠️ Project Structure
+
+```
+app/                  # Next.js app directory
+├── api/              # API routes
+├── apply/            # Loan application page
+├── dashboard/        # Farmer dashboard
+├── loans/            # Loan details pages
+├── mfi-dashboard/    # MFI dashboard
+components/           # React components
+├── ui/               # UI components (shadcn)
+├── mfi-dashboard/    # MFI dashboard components
+lib/                  # Utility functions and shared code
+├── data/             # Data fetching functions
+├── utils.ts          # Helper functions
+functions/            # Serverless functions
+├── assess-loan-risk/ # AI risk assessment function
+types/                # TypeScript type definitions
+public/               # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 18+ and npm
+- Appwrite account for backend services
+- OpenAI API key for risk assessment
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/agrigrow-finance.git
+   cd agrigrow-finance
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Set up environment variables:
+   ```
+   # Create a .env.local file with the following variables
+   APPWRITE_ENDPOINT=your_appwrite_endpoint
+   APPWRITE_PROJECT_ID=your_appwrite_project_id
+   APPWRITE_API_KEY=your_appwrite_api_key
+   OPENAI_API_KEY=your_openai_api_key
+   ```
 
-## Deploy on Vercel
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📊 Data Models
+
+### Farmer
+- Personal information
+- Farm details (location, size, crops grown)
+- Financial history
+
+### Loan Application
+- Amount requested
+- Purpose
+- Crop type
+- Farm size
+- Risk assessment data
+
+### Weather Data
+- Location
+- Rainfall
+- Temperature
+- Humidity
+- Forecast
+
+### Crop Prices
+- Crop type
+- Current price
+- Historical trends
+
+## 🧠 AI Risk Assessment
+
+Our AI risk assessment analyzes:
+- Farmer's repayment history
+- Crop viability for the region
+- Current and forecasted weather conditions
+- Market prices and trends
+- Farm size to loan amount ratio
+- Irrigation availability
+- Collateral information
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📧 Contact
+
+For questions or support, please contact us at support@agrigrow-finance.com
+
+---
+
+Built with ❤️ for Nigerian farmers
