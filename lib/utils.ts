@@ -23,9 +23,15 @@ export function formatDate(dateString: string): string {
   }).format(date);
 }
 
-export function calculateLoanStatus(application: any): string {
+interface LoanApplication {
+  status?: string;
+  approvalDate?: string;
+  repaymentPeriod?: string;
+}
+
+export function calculateLoanStatus(application: LoanApplication): string {
   // This is a simplified version - in a real app, you'd have more complex logic
-  const { status, createdAt, approvalDate, repaymentPeriod } = application;
+  const { status, approvalDate, repaymentPeriod } = application;
   
   if (status === 'rejected') return 'Rejected';
   if (status === 'pending') return 'Pending Review';
@@ -33,7 +39,7 @@ export function calculateLoanStatus(application: any): string {
   // For approved loans
   if (status === 'approved') {
     const today = new Date();
-    const approval = new Date(approvalDate);
+    const approval = new Date(approvalDate || '');
     
     // Convert repayment period to months
     let months = 3;
@@ -54,9 +60,9 @@ export function calculateLoanStatus(application: any): string {
   return 'Unknown';
 }
 
-export function calculateRepaymentProgress(application: any): number {
+export function calculateRepaymentProgress(application: LoanApplication): number {
   // This is a simplified version - in a real app, you'd calculate based on actual repayments
-  const { status, createdAt, approvalDate, repaymentPeriod } = application;
+  const { status, approvalDate, repaymentPeriod } = application;
   
   if (status !== 'approved') return 0;
   
@@ -69,7 +75,7 @@ export function calculateRepaymentProgress(application: any): number {
   if (repaymentPeriod === '24_months') totalMonths = 24;
   
   const today = new Date();
-  const approval = new Date(approvalDate);
+  const approval = new Date(approvalDate || '');
   
   // Calculate months elapsed
   const monthsElapsed = (today.getFullYear() - approval.getFullYear()) * 12 + 

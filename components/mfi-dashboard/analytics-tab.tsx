@@ -16,8 +16,17 @@ const CROP_SEASONS = {
   sorghum: { plantingMonths: [5, 6], harvestMonths: [9, 10], durationDays: 120, needsIrrigation: false }
 };
 
+interface LoanApplication {
+  $id: string;
+  status: string;
+  amount: number;
+  cropType?: string;
+  riskScore: number;
+  hasIrrigation?: boolean;
+}
+
 interface AnalyticsTabProps {
-  applications: any[];
+  applications: LoanApplication[];
 }
 
 export default function AnalyticsTab({ applications }: AnalyticsTabProps) {

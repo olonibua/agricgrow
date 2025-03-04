@@ -6,8 +6,23 @@ import { ArrowUpRight } from "lucide-react";
 import { formatCurrency, formatDate, calculateLoanStatus, calculateRepaymentProgress } from "@/lib/utils";
 import Link from "next/link";
 
+interface LoanApplication {
+  $id?: string;
+  id?: string;
+  amount: number;
+  purpose: string;
+  createdAt: string;
+  loanType: string;
+  repaymentPeriod: string;
+  riskScore: number;
+  riskExplanation?: string;
+  status?: string;
+  disbursementDate?: string;
+  repaymentDate?: string;
+}
+
 interface LoanApplicationCardProps {
-  application: any;
+  application: LoanApplication;
   detailed?: boolean;
 }
 

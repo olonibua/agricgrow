@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
+interface CollateralFormData {
+  hasCollateral?: boolean;
+  collateralType?: string;
+  collateralValue?: string;
+  [key: string]: string | boolean | undefined;
+}
+
 interface CollateralFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: CollateralFormData;
+  updateData: (data: Partial<CollateralFormData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }

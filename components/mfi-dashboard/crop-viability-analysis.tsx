@@ -70,20 +70,38 @@ const CROP_SEASONS = {
   }
 };
 
+interface CropApplication {
+  cropType?: string;
+  hasIrrigation?: boolean;
+  expectedHarvestDate?: string;
+}
+
+interface AnalysisResult {
+  viable?: boolean;
+  message?: string;
+  recommendations?: string[];
+  plantingMonths?: string;
+  harvestMonths?: string;
+  durationDays?: number;
+  needsIrrigation?: string;
+  harvestDateMessage?: string;
+}
+
 interface CropViabilityAnalysisProps {
-  application: any;
+  application: CropApplication;
 }
 
 export default function CropViabilityAnalysis({ application }: CropViabilityAnalysisProps) {
-  const [analysis, setAnalysis] = useState<any>({});
+  const [analysis, setAnalysis] = useState<AnalysisResult>({});
 
   useEffect(() => {
     analyzeCropViability(application);
   }, [application]);
 
-  const analyzeCropViability = (application: any) => {
-    const { cropType, farmLocation, hasIrrigation, expectedHarvestDate } = application;
-    const cropInfo = CROP_SEASONS[cropType as keyof typeof CROP_SEASONS];
+  const analyzeCropViability = (application: CropApplication) => {
+    const { cropType, hasIrrigation, expectedHarvestDate } = application;
+    // Removed unused farmLocation variable
+    const cropInfo = cropType ? CROP_SEASONS[cropType as keyof typeof CROP_SEASONS] : undefined;
     
     if (!cropInfo) {
       setAnalysis({
@@ -138,7 +156,7 @@ export default function CropViabilityAnalysis({ application }: CropViabilityAnal
     const viable = isGoodPlantingTime && !irrigationIssue && !harvestDateIssue;
     
     // Generate overall message
-    let message = viable 
+    const message = viable 
       ? `${cropType} is viable for planting now with the current conditions.` 
       : `There are concerns with growing ${cropType} under the current conditions.`;
     

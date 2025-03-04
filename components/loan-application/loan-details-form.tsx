@@ -25,9 +25,17 @@ const REPAYMENT_PERIODS = [
   { id: "24_months", name: "24 Months" }
 ];
 
+interface LoanDetailsFormData {
+  loanType?: string;
+  amount?: string;
+  purpose?: string;
+  repaymentPeriod?: string;
+  [key: string]: string | boolean | undefined;
+}
+
 interface LoanDetailsFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: LoanDetailsFormData;
+  updateData: (data: Partial<LoanDetailsFormData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }

@@ -77,4 +77,36 @@ export interface CropPrice {
   date: Date;
   market: string;
   trend: 'rising' | 'falling' | 'stable';
+}
+
+export interface LoanApplication {
+  $id: string;
+  farmerId: string;
+  fullName: string;
+  amount: number;
+  cropType: string;
+  farmSize: number;
+  applicationDate?: string;
+  createdAt: string;
+  status: 'pending' | 'approved' | 'rejected' | string;
+  riskScore: number;
+  riskExplanation?: string;
+  phone: string;
+  email: string;
+  address: string;
+  lga: string;
+  state: string;
+  purpose: string;
+  farmingType: string;
+  farmLocation: string;
+  hasIrrigation: boolean;
+  expectedHarvestDate: string;
+  estimatedYield: number;
+  estimatedRevenue: number;
+  marketStrategy: string;
+  loanType?: string;
+  repaymentPeriod?: string;
+  approvalDate?: string;
+  rejectionDate?: string;
+  [key: string]: string | number | boolean | undefined;
 } 

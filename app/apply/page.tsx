@@ -2,12 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { databases } from '@/lib/appwrite';
-import { sendEmail } from '@/lib/resend';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import PersonalInfoForm from '@/components/loan-application/personal-info-form';
@@ -100,10 +96,10 @@ export default function LoanApplicationPage() {
     localStorage.setItem('loanApplicationActiveTab', activeTab);
   }, [activeTab]);
   
-  const updateFormData = (section: string, data: any) => {
-    setFormData(prev => ({
+  const updateFormData = (section: string, data: Record<string, unknown>) => {
+    setFormData((prev) => ({
       ...prev,
-      ...data
+      ...data,
     }));
   };
   
@@ -227,7 +223,7 @@ export default function LoanApplicationPage() {
   };
   
   // Generate risk explanation based on score and form data
-  const generateRiskExplanation = (score: number, data: any) => {
+  const generateRiskExplanation = (score: number, data: Record<string, unknown>) => {
     let explanation = '';
     
     if (score >= 80) {

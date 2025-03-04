@@ -4,9 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 
+interface DeclarationFormData {
+  hasInsurance?: boolean;
+  hasPreviousLoan?: boolean;
+  agreeToTerms?: boolean;
+  [key: string]: string | boolean | undefined;
+}
+
 interface DeclarationFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: DeclarationFormData;
+  updateData: (data: Partial<DeclarationFormData>) => void;
   onPrev: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;

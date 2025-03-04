@@ -98,7 +98,7 @@ export default function Home() {
                   />
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Repayment schedules are aligned with your crop's harvest cycle, ensuring you can pay when you have income.
+                  Repayment schedules are aligned with your crop&apos;s harvest cycle, ensuring you can pay when you have income.
                 </p>
               </CardContent>
               <CardFooter>
@@ -142,7 +142,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">The AgriGrow Process</h2>
             <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              From application to repayment, we've designed a simple process for farmers and MFIs.
+              From application to repayment, we&apos;ve designed a simple process for farmers and MFIs.
             </p>
           </div>
 
@@ -168,7 +168,7 @@ export default function Home() {
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">3</div>
                   <div>
                     <h4 className="font-bold text-lg">Get Your Repayment Schedule</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Receive a custom repayment plan based on your crop's harvest cycle.</p>
+                    <p className="text-gray-600 dark:text-gray-400">Receive a custom repayment plan based on your crop&apos;s harvest cycle.</p>
                   </div>
                 </li>
                 <li className="flex gap-4">

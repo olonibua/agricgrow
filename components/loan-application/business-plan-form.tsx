@@ -4,9 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
+interface BusinessPlanFormData {
+  expectedHarvestDate?: string;
+  estimatedYield?: string;
+  estimatedRevenue?: string;
+  marketStrategy?: string;
+  [key: string]: string | boolean | undefined;
+}
+
 interface BusinessPlanFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: BusinessPlanFormData;
+  updateData: (data: Partial<BusinessPlanFormData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }

@@ -6,10 +6,11 @@ import ApplicationsTab from '@/components/mfi-dashboard/applications-tab';
 import CropCalendarTab from '@/components/mfi-dashboard/crop-calendar-tab';
 import SettingsTab from '@/components/mfi-dashboard/settings-tab';
 import AnalyticsTab from '@/components/mfi-dashboard/analytics-tab';
+import { LoanApplication } from '@/types';
 
 export default function MFIDashboardPage() {
   const [activeTab, setActiveTab] = useState("applications");
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<LoanApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function MFIDashboardPage() {
     loadApplications();
   }, []);
 
-  const handleApplicationUpdate = (updatedApplications: any[]) => {
+  const handleApplicationUpdate = (updatedApplications: LoanApplication[]) => {
     setApplications(updatedApplications);
     localStorage.setItem('loanApplications', JSON.stringify(updatedApplications));
   };

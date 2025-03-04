@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentWeather, getHistoricalWeather } from '@/lib/data/weather';
-import { getAgricultureData, getEconomicData } from '@/lib/data/world-bank';
+import { getAgricultureData, getEconomicData, INDICATORS } from '@/lib/data/world-bank';
 import { OpenAI } from 'openai';
 
 // Initialize OpenAI
@@ -9,7 +9,7 @@ const openai = new OpenAI({
 });
 
 // Mock data for price trends (in a real app, this would come from NBS)
-const generateMockPriceData = (crop: string, location: string) => {
+const generateMockPriceData = (crop: string) => {
   const today = new Date();
   const data = [];
   
@@ -41,27 +41,28 @@ const generateMockPriceData = (crop: string, location: string) => {
 };
 
 // Mock data for historical weather
-const generateMockHistoricalWeather = (location: string) => {
-  const today = new Date();
-  const data = [];
+// Commented out since it's not used
+// const generateMockHistoricalWeather = () => {
+//   const today = new Date();
+//   const data = [];
   
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(today.getDate() - i);
+//   for (let i = 6; i >= 0; i--) {
+//     const date = new Date();
+//     date.setDate(today.getDate() - i);
     
-    data.push({
-      date: date.toISOString().split('T')[0],
-      temperature: 25 + Math.floor(Math.random() * 10),
-      rainfall: Math.floor(Math.random() * 20),
-      humidity: 60 + Math.floor(Math.random() * 20)
-    });
-  }
+//     data.push({
+//       date: date.toISOString().split('T')[0],
+//       temperature: 25 + Math.floor(Math.random() * 10),
+//       rainfall: Math.floor(Math.random() * 20),
+//       humidity: 60 + Math.floor(Math.random() * 20)
+//     });
+//   }
   
-  return data;
-};
+//   return data;
+// };
 
 // Generate insights using OpenAI
-async function generateInsights(crop: string, weatherData: any, priceData: any) {
+async function generateInsights(crop: string, weatherData: Record<string, unknown>, priceData: Record<string, unknown>) {
   try {
     // Check if OPENAI_API_KEY is set
     if (!process.env.OPENAI_API_KEY) {
@@ -93,7 +94,7 @@ async function generateInsights(crop: string, weatherData: any, priceData: any) 
     
     return JSON.parse(response.choices[0].message.content || '{}');
   } catch  {
-    console.error('Error generating insights:', );
+    console.error('Error generating insights:');
     
     // Always use fallback insights if OpenAI fails for any reason
     return {
@@ -120,7 +121,7 @@ export async function GET(request: Request) {
     // Get price data (using mock data for now)
     const priceData = {
       source: 'NBS (simulated)',
-      data: generateMockPriceData(crop, location)
+      data: generateMockPriceData(crop)
     };
     
     // Generate historical weather data using the new function
@@ -129,19 +130,23 @@ export async function GET(request: Request) {
       : [];
     
     // Generate insights using OpenAI
-    const insights = await generateInsights(crop, weatherData, priceData);
+    const insights = await generateInsights(
+      crop, 
+      (weatherData as unknown) as Record<string, unknown> || {}, 
+      priceData
+    );
     
     // Process economic data for easier access in the UI
     const processedEconomicData = {
-      gdp: economicData.NY?.GDP?.MKTP?.CD || [],
-      cpi: economicData.FP?.CPI?.TOTL || []
+      gdp: economicData[INDICATORS.GDP] || [],
+      cpi: economicData[INDICATORS.INFLATION] || []
     };
 
     // Process agricultural data for easier access in the UI
     const processedAgriculturalData = {
-      landUse: agriculturalData.AG?.LND?.AGRI?.ZS || [],
-      cropProduction: agriculturalData.AG?.PRD?.CROP?.XD || [],
-      valueAdded: agriculturalData.NV?.AGR?.TOTL?.ZS || []
+      landUse: agriculturalData[INDICATORS.AGRICULTURAL_LAND] || [],
+      cropProduction: agriculturalData[INDICATORS.CROP_PRODUCTION] || [],
+      valueAdded: agriculturalData[INDICATORS.AGRICULTURAL_VALUE] || []
     };
 
     return NextResponse.json({

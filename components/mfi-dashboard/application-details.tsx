@@ -4,10 +4,39 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+interface LoanApplication {
+  $id: string;
+  status: string;
+  fullName: string;
+  farmerId: string;
+  phone: string;
+  email: string;
+  address: string;
+  lga: string;
+  state: string;
+  amount: number;
+  loanType?: string;
+  purpose: string;
+  repaymentPeriod?: string;
+  applicationDate?: string;
+  createdAt: string;
+  farmingType: string;
+  cropType: string;
+  farmSize: number;
+  farmLocation: string;
+  hasIrrigation: boolean;
+  expectedHarvestDate: string;
+  estimatedYield: number;
+  estimatedRevenue: number;
+  marketStrategy: string;
+  riskScore: number;
+  riskExplanation?: string;
+}
+
 interface ApplicationDetailsProps {
-  application: any;
-  onApprove: (application: any) => void;
-  onReject: (application: any) => void;
+  application: LoanApplication;
+  onApprove: (application: LoanApplication) => void;
+  onReject: (application: LoanApplication) => void;
   onClose: () => void;
 }
 

@@ -77,10 +77,26 @@ export async function getCurrentWeather(location: string): Promise<WeatherData |
 // Alias for getCurrentWeather to maintain compatibility
 export const getWeatherData = getCurrentWeather;
 
+interface ForecastItem {
+  date: string;
+  time: string;
+  temperature: number;
+  humidity: number;
+  wind_speed: number;
+  condition: string;
+  icon: string;
+  rainfall: number;
+}
+
+interface ForecastData {
+  location: string;
+  forecast: ForecastItem[];
+}
+
 /**
  * Fetches 5-day weather forecast for a location
  */
-export async function getWeatherForecast(location: string) {
+export async function getWeatherForecast(location: string): Promise<ForecastData | null> {
   try {
     const response = await fetch(
       `${BASE_URL}/forecast?q=${encodeURIComponent(location)},ng&units=metric&appid=${API_KEY}`,
@@ -96,7 +112,23 @@ export async function getWeatherForecast(location: string) {
     const data = await response.json();
     
     // Process the forecast data
-    const forecast = data.list.map((item: any) => ({
+    const forecast = data.list.map((item: {
+      dt: number;
+      main: {
+        temp: number;
+        humidity: number;
+      };
+      wind: {
+        speed: number;
+      };
+      weather: Array<{
+        main: string;
+        icon: string;
+      }>;
+      rain?: {
+        "3h"?: number;
+      };
+    }) => ({
       date: new Date(item.dt * 1000).toISOString().split('T')[0],
       time: new Date(item.dt * 1000).toISOString().split('T')[1].substring(0, 5),
       temperature: Math.round(item.main.temp),

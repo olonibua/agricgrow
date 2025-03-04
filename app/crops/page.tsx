@@ -5,9 +5,60 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, Droplets, Thermometer, Wind } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// Define interfaces for the data
+interface WeatherData {
+  location: string;
+  temperature: number;
+  humidity: number;
+  wind_speed: number;
+  condition: string;
+}
+
+interface PriceData {
+  date: string;
+  price: number;
+}
+
+interface EconomicData {
+  gdp: Array<{date: string; value: number}>;
+  cpi: Array<{date: string; value: number}>;
+}
+
+interface AgriculturalData {
+  landUse: Array<{date: string; value: number}>;
+  cropProduction: Array<{date: string; value: number}>;
+  valueAdded: Array<{date: string; value: number}>;
+}
+
+interface Insights {
+  growthConditions: string;
+  priceImpact: string;
+  recommendations: string;
+}
+
+interface CropData {
+  weather: {
+    source: string;
+    data: WeatherData | null;
+  };
+  prices: {
+    source: string;
+    data: PriceData[];
+  };
+  economic: {
+    source: string;
+    data: EconomicData;
+  };
+  agricultural: {
+    source: string;
+    data: AgriculturalData;
+  };
+  historicalWeather: Array<{date: string; temperature: number; rainfall: number}>;
+  insights: Insights;
+}
 
 // Common crops in Nigeria
 const CROPS = [
@@ -35,7 +86,7 @@ export default function CropInsightsPage() {
   const [selectedLocation, setSelectedLocation] = useState("lagos");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<CropData | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -181,7 +232,7 @@ export default function CropInsightsPage() {
             </CardContent>
             <CardFooter>
               <p className="text-sm text-gray-500">
-                Average price: ₦{data.prices.data.reduce((acc: number, item: any) => acc + item.price, 0) / data.prices.data.length}
+                Average price: ₦{data.prices.data.reduce((acc: number, item: PriceData) => acc + item.price, 0) / data.prices.data.length}
               </p>
             </CardFooter>
           </Card>
@@ -239,7 +290,7 @@ export default function CropInsightsPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {data.economic.data.gdp.map((item: any, index: number) => (
+                            {data.economic.data.gdp.map((item, index) => (
                               <tr key={index}>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.date}</td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{(item.value / 1000000000).toFixed(2)} billion</td>
@@ -262,7 +313,7 @@ export default function CropInsightsPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {data.economic.data.cpi.map((item: any, index: number) => (
+                            {data.economic.data.cpi.map((item, index) => (
                               <tr key={index}>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.date}</td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.value?.toFixed(2)}</td>
@@ -291,7 +342,7 @@ export default function CropInsightsPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {data.agricultural.data.landUse.map((item: any, index: number) => (
+                            {data.agricultural.data.landUse.map((item, index) => (
                               <tr key={index}>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.date}</td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.value ? item.value.toFixed(2) : 'N/A'}</td>
@@ -314,7 +365,7 @@ export default function CropInsightsPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {data.agricultural.data.cropProduction.map((item: any, index: number) => (
+                            {data.agricultural.data.cropProduction.map((item, index) => (
                               <tr key={index}>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.date}</td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.value ? item.value.toFixed(2) : 'N/A'}</td>
@@ -337,7 +388,7 @@ export default function CropInsightsPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {data.agricultural.data.valueAdded.map((item: any, index: number) => (
+                            {data.agricultural.data.valueAdded.map((item, index) => (
                               <tr key={index}>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.date}</td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{item.value ? item.value.toFixed(2) : 'N/A'}</td>

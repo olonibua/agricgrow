@@ -40,7 +40,7 @@ export function Header() {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <Image
-                src="/logo.svg"
+                src="/globe.svg"
                 alt="AgriGrow Finance Logo"
                 width={40}
                 height={40}

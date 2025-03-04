@@ -13,9 +13,20 @@ const STATES = [
   "Yobe", "Zamfara"
 ];
 
+interface PersonalInfoFormData {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  farmerId?: string;
+  address?: string;
+  state?: string;
+  lga?: string;
+  [key: string]: string | boolean | undefined;
+}
+
 interface PersonalInfoFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: PersonalInfoFormData;
+  updateData: (data: Partial<PersonalInfoFormData>) => void;
   onNext: () => void;
 }
 

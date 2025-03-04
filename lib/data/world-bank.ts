@@ -16,6 +16,23 @@ export const INDICATORS = {
   RURAL_POPULATION: "SP.RUR.TOTL"
 };
 
+interface IndicatorData {
+  indicator: {
+    id: string;
+    value: string;
+  };
+  country: {
+    id: string;
+    value: string;
+  };
+  countryiso3code: string;
+  date: string;
+  value: number | null;
+  unit?: string;
+  obs_status?: string;
+  decimal?: number;
+}
+
 /**
  * Fetches data for a specific indicator from World Bank API
  */
@@ -31,7 +48,7 @@ export async function fetchIndicator(indicatorCode: string, countryCode = "NGA")
     }
     
     const data = await response.json();
-    return data[1]; // World Bank returns metadata in [0] and actual data in [1]
+    return data[1] as IndicatorData[]; // World Bank returns metadata in [0] and actual data in [1]
   } catch (error) {
     console.error(`Error fetching World Bank indicator ${indicatorCode}:`, error);
     return null;
@@ -42,7 +59,7 @@ export async function fetchIndicator(indicatorCode: string, countryCode = "NGA")
  * Fetches multiple indicators at once
  */
 export async function fetchMultipleIndicators(indicatorCodes: string[], countryCode = "NGA") {
-  const results: Record<string, any> = {};
+  const results: Record<string, IndicatorData[] | null> = {};
   
   for (const code of indicatorCodes) {
     results[code] = await fetchIndicator(code, countryCode);

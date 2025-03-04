@@ -25,17 +25,49 @@ const CROPS = [
   { id: "sorghum", name: "Sorghum" }
 ];
 
+interface LoanApplication {
+  $id: string;
+  fullName: string;
+  farmerId: string;
+  amount: number;
+  cropType: string;
+  applicationDate?: string;
+  createdAt: string;
+  riskScore: number;
+  status: string;
+  approvalDate?: string;
+  rejectionDate?: string;
+  phone: string;
+  email: string;
+  address: string;
+  lga: string;
+  state: string;
+  purpose: string;
+  farmingType: string;
+  farmSize: number;
+  farmLocation: string;
+  hasIrrigation: boolean;
+  expectedHarvestDate: string;
+  estimatedYield: number;
+  estimatedRevenue: number;
+  marketStrategy: string;
+  riskExplanation?: string;
+  loanType?: string;
+  repaymentPeriod?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 interface ApplicationsTabProps {
-  applications: any[];
-  onApplicationsUpdate: (applications: any[]) => void;
+  applications: LoanApplication[];
+  onApplicationsUpdate: (applications: LoanApplication[]) => void;
 }
 
 export default function ApplicationsTab({ applications, onApplicationsUpdate }: ApplicationsTabProps) {
-  const [filteredApplications, setFilteredApplications] = useState<any[]>(applications);
+  const [filteredApplications, setFilteredApplications] = useState<LoanApplication[]>(applications);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [cropFilter, setCropFilter] = useState("all");
-  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [selectedApplication, setSelectedApplication] = useState<LoanApplication | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   // Filter applications when search term or filters change
@@ -66,10 +98,13 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
     // Apply sorting
     if (sortConfig) {
       result.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const aValue = a[sortConfig.key] ?? '';
+        const bValue = b[sortConfig.key] ?? '';
+        
+        if (aValue < bValue) {
           return sortConfig.direction === 'asc' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
@@ -87,7 +122,7 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
     setSortConfig({ key, direction });
   };
 
-  const handleApprove = (application: any) => {
+  const handleApprove = (application: LoanApplication) => {
     const updatedApplications = applications.map(app => {
       if (app.$id === application.$id) {
         return {
@@ -103,7 +138,7 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
     setSelectedApplication(null);
   };
 
-  const handleReject = (application: any) => {
+  const handleReject = (application: LoanApplication) => {
     const updatedApplications = applications.map(app => {
       if (app.$id === application.$id) {
         return {
@@ -256,9 +291,9 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
       {selectedApplication && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ApplicationDetails
-            application={selectedApplication}
-            onApprove={handleApprove}
-            onReject={handleReject}
+            application={selectedApplication as any}
+            onApprove={(app) => handleApprove(app as any)}
+            onReject={(app) => handleReject(app as any)}
             onClose={() => setSelectedApplication(null)}
           />
           

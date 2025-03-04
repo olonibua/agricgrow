@@ -3,9 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface GuarantorFormData {
+  guarantorName?: string;
+  guarantorPhone?: string;
+  guarantorAddress?: string;
+  guarantorRelationship?: string;
+  [key: string]: string | boolean | undefined;
+}
+
 interface GuarantorFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: GuarantorFormData;
+  updateData: (data: Partial<GuarantorFormData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }
@@ -53,7 +61,7 @@ export default function GuarantorForm({ data, updateData, onNext, onPrev }: Guar
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="guarantorName">Guarantor's Full Name*</Label>
+          <Label htmlFor="guarantorName">Guarantor&apos;s Full Name*</Label>
           <Input
             id="guarantorName"
             name="guarantorName"
@@ -65,7 +73,7 @@ export default function GuarantorForm({ data, updateData, onNext, onPrev }: Guar
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="guarantorPhone">Guarantor's Phone Number*</Label>
+          <Label htmlFor="guarantorPhone">Guarantor&apos;s Phone Number*</Label>
           <Input
             id="guarantorPhone"
             name="guarantorPhone"
@@ -78,7 +86,7 @@ export default function GuarantorForm({ data, updateData, onNext, onPrev }: Guar
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="guarantorAddress">Guarantor's Address*</Label>
+        <Label htmlFor="guarantorAddress">Guarantor&apos;s Address*</Label>
         <Input
           id="guarantorAddress"
           name="guarantorAddress"

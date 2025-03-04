@@ -5,8 +5,8 @@ import { sendSMS } from '@/lib/africas-talking';
 export async function POST(req: NextRequest) {
   const data = await req.formData();
   
-  const sessionId = data.get('sessionId') as string;
-  const serviceCode = data.get('serviceCode') as string;
+  // const sessionId = data.get('sessionId') as string;
+  // const serviceCode = data.get('serviceCode') as string;
   const phoneNumber = data.get('phoneNumber') as string;
   const text = data.get('text') as string;
   
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         );
         
         response = 'END Your loan application has been submitted successfully. You will receive an SMS with details.';
-      } catch (error) {
+      } catch {
         response = 'END An error occurred. Please try again later.';
       }
     }

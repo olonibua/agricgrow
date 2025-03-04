@@ -29,20 +29,20 @@ export async function GET() {
     // Extract weather data (implementation depends on website structure)
     const weatherData: WeatherData[] = [];
     
-    $('.weather-location').each((i: number, el: any) => {
-      const location = $(el).find('.location-name').text().trim();
-      const rainfall = parseFloat($(el).find('.rainfall').text());
-      const temperature = parseFloat($(el).find('.temperature').text());
-      const humidity = parseFloat($(el).find('.humidity').text());
-      const forecast = $(el).find('.forecast').text().trim();
-      
+    $(".weather-location").each((i: number, el) => {
+      const location = $(el).find(".location-name").text().trim();
+      const rainfall = parseFloat($(el).find(".rainfall").text());
+      const temperature = parseFloat($(el).find(".temperature").text());
+      const humidity = parseFloat($(el).find(".humidity").text());
+      const forecast = $(el).find(".forecast").text().trim();
+
       weatherData.push({
         location,
         rainfall,
         temperature,
         humidity,
         forecast,
-        date: new Date()
+        date: new Date(),
       });
     });
     

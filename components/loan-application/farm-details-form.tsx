@@ -30,9 +30,19 @@ const LIVESTOCK = [
   { id: "other", name: "Other" }
 ];
 
+interface FarmDetailsFormData {
+  farmingType?: string;
+  cropType?: string;
+  livestockType?: string;
+  farmSize?: string;
+  farmLocation?: string;
+  hasIrrigation?: boolean;
+  [key: string]: string | boolean | undefined;
+}
+
 interface FarmDetailsFormProps {
-  data: any;
-  updateData: (data: any) => void;
+  data: FarmDetailsFormData;
+  updateData: (data: Partial<FarmDetailsFormData>) => void;
   onNext: () => void;
   onPrev: () => void;
 }

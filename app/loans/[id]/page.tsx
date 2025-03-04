@@ -1,24 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, CalendarIcon, FileText, CheckCircle, AlertCircle } from "lucide-react";
-import { formatCurrency, formatDate, calculateLoanStatus, calculateRepaymentProgress } from "@/lib/utils";
+import { AlertCircle, ArrowLeft, Calendar, Clock, DollarSign, FileText } from "lucide-react";
+
+// Define interfaces for type safety
+interface LoanApplication {
+  $id: string;
+  amount: number;
+  purpose: string;
+  status: 'pending' | 'approved' | 'rejected';
+  applicationDate: string;
+  cropType: string;
+  farmSize: number;
+  riskScore: number;
+  riskExplanation?: string;
+  disbursementDate?: string;
+  repaymentDate?: string;
+  interestRate?: number;
+}
 
 export default function LoanDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { id } = params;
-  
-  const [loan, setLoan] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
+  const [loan, setLoan] = useState<LoanApplication | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchLoanDetails = () => {
       try {
@@ -27,26 +40,29 @@ export default function LoanDetailsPage() {
         const savedApplications = localStorage.getItem('loanApplications');
         if (savedApplications) {
           const applications = JSON.parse(savedApplications);
-          const foundLoan = applications.find((app: any) => app.$id === id || app.id === id);
+          const loanDetails = applications.find((app: LoanApplication) => app.$id === params.id);
           
-          if (foundLoan) {
-            setLoan(foundLoan);
+          if (loanDetails) {
+            setLoan(loanDetails);
+          } else {
+            setError("Loan application not found");
           }
+        } else {
+          setError("No loan applications found");
         }
         
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error loading loan details:", error);
-        setIsLoading(false);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching loan details:", err);
+        setError("Failed to load loan details");
+        setLoading(false);
       }
     };
     
-    if (id) {
-      fetchLoanDetails();
-    }
-  }, [id]);
-  
-  if (isLoading) {
+    fetchLoanDetails();
+  }, [params.id]);
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -56,22 +72,25 @@ export default function LoanDetailsPage() {
       </div>
     );
   }
-  
-  if (!loan) {
+
+  if (error || !loan) {
     return (
       <div className="container mx-auto p-6">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+        <Button variant="outline" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         
-        <Card className="max-w-3xl mx-auto">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Loan Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              The loan application you're looking for doesn't exist or has been removed.
-            </p>
-            <Button asChild>
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>We couldn&apos;t load the loan details</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error || "Loan application not found"}</p>
+            </div>
+            <Button asChild className="mt-4">
               <Link href="/dashboard">Return to Dashboard</Link>
             </Button>
           </CardContent>
@@ -79,13 +98,14 @@ export default function LoanDetailsPage() {
       </div>
     );
   }
-  
-  const status = calculateLoanStatus(loan);
-  const progress = calculateRepaymentProgress(loan);
-  
+
+  // Calculate total repayment amount
+  const interestRate = loan.interestRate || 8.5; // Default to 8.5% if not specified
+  const totalRepayment = loan.amount * (1 + interestRate / 100);
+
   return (
     <div className="container mx-auto p-6">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+      <Button variant="outline" onClick={() => router.back()} className="mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
       </Button>
       
@@ -95,95 +115,126 @@ export default function LoanDetailsPage() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl">Loan Application</CardTitle>
-                  <CardDescription>Application ID: {loan.$id || loan.id}</CardDescription>
+                  <CardTitle>Loan Application #{loan.$id}</CardTitle>
+                  <CardDescription>Applied on {new Date(loan.applicationDate).toLocaleDateString()}</CardDescription>
                 </div>
                 <Badge 
                   variant={
-                    status === 'Active' ? 'default' : 
-                    status === 'Overdue' ? 'destructive' : 
-                    status === 'Pending Review' ? 'outline' :
-                    status === 'Rejected' ? 'destructive' : 'secondary'
+                    loan.status === 'approved' ? 'default' : 
+                    loan.status === 'rejected' ? 'destructive' : 'outline'
                   }
-                  className="text-sm px-3 py-1"
+                  className="ml-2"
                 >
-                  {status}
+                  {loan.status.charAt(0).toUpperCase() + loan.status.slice(1)}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-muted-foreground">Loan Amount</p>
-                  <p className="text-2xl font-bold">{formatCurrency(loan.amount)}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Loan Amount</h3>
+                  <div className="flex items-center mt-1">
+                    <DollarSign className="h-5 w-5 text-gray-400 mr-1" />
+                    <span className="text-2xl font-bold">₦{loan.amount.toLocaleString()}</span>
+                  </div>
                 </div>
+                
                 <div>
-                  <p className="text-sm text-muted-foreground">Repayment Period</p>
-                  <p className="text-lg font-medium">{loan.repaymentPeriod.replace('_', ' ')}</p>
+                  <h3 className="text-sm font-medium text-gray-500">Purpose</h3>
+                  <p className="mt-1">{loan.purpose}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Crop Type</h3>
+                  <p className="mt-1">{loan.cropType}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Farm Size</h3>
+                  <p className="mt-1">{loan.farmSize} hectares</p>
                 </div>
               </div>
               
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Loan Purpose</p>
-                <p>{loan.purpose}</p>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h3 className="font-medium mb-2">Application Timeline</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <div className="mr-3 bg-primary/20 p-2 rounded-full">
-                      <FileText className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Application Submitted</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(loan.createdAt)}
-                      </p>
-                    </div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Risk Assessment</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>Risk Score</span>
+                    <span className="font-medium">{loan.riskScore}/100</span>
                   </div>
-                  
-                  {loan.status === 'approved' && (
-                    <div className="flex items-start">
-                      <div className="mr-3 bg-green-100 p-2 rounded-full">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Application Approved</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(loan.approvalDate || loan.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {loan.status === 'rejected' && (
-                    <div className="flex items-start">
-                      <div className="mr-3 bg-red-100 p-2 rounded-full">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Application Rejected</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(loan.rejectionDate || loan.createdAt)}
-                        </p>
-                      </div>
-                    </div>
+                  <Progress value={loan.riskScore} className="h-2" />
+                  {loan.riskExplanation && (
+                    <p className="text-sm text-gray-500 mt-2">{loan.riskExplanation}</p>
                   )}
                 </div>
               </div>
               
-              {status === 'Active' && (
-                <div>
-                  <h3 className="font-medium mb-2">Repayment Progress</h3>
-                  <div className="flex justify-between items-center mb-1">
-                    <p className="text-sm text-muted-foreground">Progress</p>
-                    <p className="text-sm font-medium">{progress}%</p>
+              {loan.status === 'approved' && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                  <h3 className="text-sm font-medium text-green-800 mb-3">Loan Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-start">
+                      <Calendar className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Disbursement Date</p>
+                        <p className="text-sm text-gray-600">{loan.disbursementDate || "June 15, 2023"}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <Calendar className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Repayment Date</p>
+                        <p className="text-sm text-gray-600">{loan.repaymentDate || "December 15, 2023"}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <Clock className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Loan Term</p>
+                        <p className="text-sm text-gray-600">6 months</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <DollarSign className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Interest Rate</p>
+                        <p className="text-sm text-gray-600">{interestRate}%</p>
+                      </div>
+                    </div>
                   </div>
-                  <Progress value={progress} className="h-2 mb-2" />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Start: {formatDate(loan.approvalDate || loan.createdAt)}</span>
-                    <span>End: {formatDate(loan.dueDate || '2024-12-31')}</span>
+                  
+                  <div className="mt-4 pt-4 border-t border-green-200">
+                    <div className="flex justify-between">
+                      <p className="font-medium">Total Repayment Amount</p>
+                      <p className="font-bold">₦{totalRepayment.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {loan.status === 'rejected' && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start">
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-3 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800 mb-1">Application Declined</h3>
+                    <p className="text-sm text-red-700">
+                      {loan.riskExplanation || "Your application did not meet our current lending criteria. Please contact our support team for more information."}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {loan.status === 'pending' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start">
+                  <Clock className="h-5 w-5 text-yellow-500 mr-3 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-medium text-yellow-800 mb-1">Application Under Review</h3>
+                    <p className="text-sm text-yellow-700">
+                      Your application is currently being reviewed by our team. This process typically takes 2-3 business days.
+                    </p>
                   </div>
                 </div>
               )}
@@ -192,50 +243,63 @@ export default function LoanDetailsPage() {
         </div>
         
         <div>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Risk Assessment</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <p className="text-sm text-muted-foreground">Risk Score</p>
-                  <p className="text-sm font-medium">{loan.riskScore}%</p>
-                </div>
-                <Progress 
-                  value={loan.riskScore} 
-                  className={`h-2 ${
-                    loan.riskScore >= 70 ? "[--progress-foreground:theme(colors.green.500)]" :
-                    loan.riskScore >= 40 ? "[--progress-foreground:theme(colors.yellow.500)]" : 
-                    "[--progress-foreground:theme(colors.red.500)]"
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Risk Explanation</p>
-                <p className="text-sm">{loan.riskExplanation}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
           <Card>
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {status === 'Pending Review' && (
-                <Button variant="outline" className="w-full">Check Application Status</Button>
-              )}
+            <CardContent className="space-y-4">
+              <Button className="w-full" asChild>
+                <Link href={`/loans/${loan.$id}/repayment`}>
+                  Make a Repayment
+                </Link>
+              </Button>
               
-              {status === 'Active' && (
-                <>
-                  <Button className="w-full">Make a Payment</Button>
-                  <Button variant="outline" className="w-full">Download Repayment Schedule</Button>
-                </>
-              )}
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/apply">
+                  Apply for Another Loan
+                </Link>
+              </Button>
               
-              <Button variant="outline" className="w-full">Contact Support</Button>
+              <Button variant="outline" className="w-full">
+                <FileText className="mr-2 h-4 w-4" />
+                Download Loan Agreement
+              </Button>
+              
+              <Button variant="outline" className="w-full">
+                Contact Support
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Repayment Schedule</CardTitle>
+              <CardDescription>Upcoming payments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loan.status === 'approved' ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <div>
+                      <p className="font-medium">December 15, 2023</p>
+                      <p className="text-sm text-gray-500">Final Payment</p>
+                    </div>
+                    <p className="font-bold">₦{totalRepayment.toLocaleString()}</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">
+                      This loan has a single repayment at the end of the term.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500">
+                    Repayment schedule will be available once your loan is approved.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
