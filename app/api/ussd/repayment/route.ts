@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { databases } from '@/lib/appwrite';
-import { sendSMS } from '@/lib/africas-talking';
 import { Query } from 'appwrite';
+import { sendSMS } from '@/lib/africas-talking';
 
 export async function POST(req: NextRequest) {
   const data = await req.formData();
   
-  const sessionId = data.get('sessionId') as string;
+  // const sessionId = data.get('sessionId') as string;
   const phoneNumber = data.get('phoneNumber') as string;
   const text = data.get('text') as string;
   
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
             response += `${index + 1}. Loan #${loan.$id.substring(0, 8)} - ₦${loan.amount}\n`;
           });
         }
-      } catch (error) {
+      } catch  {
         response = 'END An error occurred. Please try again later.';
       }
     } else if (level === 3) {
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
             });
           }
         }
-      } catch (error) {
+      } catch {
         response = 'END An error occurred. Please try again later.';
       }
     } else if (level === 4) {
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         );
         
         response = 'END Your payment has been recorded successfully. You will receive a confirmation SMS shortly.';
-      } catch (error) {
+      } catch  {
         response = 'END An error occurred. Please try again later.';
       }
     }
