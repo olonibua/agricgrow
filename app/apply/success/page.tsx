@@ -1,39 +1,50 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle } from "lucide-react";
+import Link from "next/link";
 
-export default function LoanApplicationSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get('id');
-  
+
   return (
-    <div className="max-w-md mx-auto p-6">
-      <Card className="border-green-200">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
+    <div className="container max-w-lg py-8">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-8 w-8 text-green-500" />
+            <CardTitle>Application Submitted!</CardTitle>
           </div>
-          <CardTitle className="text-2xl font-bold text-green-700">Application Submitted!</CardTitle>
-          <CardDescription>Your loan application has been received</CardDescription>
+          <CardDescription>
+            Your loan application has been received successfully
+          </CardDescription>
         </CardHeader>
-        <CardContent className="text-center">
-          <p className="mb-4">Thank you for applying for an agricultural loan with AgriGrow Finance.</p>
-          <p className="mb-4">Your application ID is: <span className="font-mono font-bold">{applicationId}</span></p>
-          <p>We will review your application and get back to you shortly. You will receive updates via email and SMS.</p>
+        <CardContent className="space-y-4">
+          <p className="text-sm">
+            Application ID: <span className="font-mono">{applicationId}</span>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            We will review your application and get back to you within 2-3 business days.
+          </p>
+          <div className="flex justify-end">
+            <Link href="/dashboard">
+              <Button>Go to Dashboard</Button>
+            </Link>
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-center gap-4">
-          <Button asChild variant="outline">
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/">Return Home</Link>
-          </Button>
-        </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 } 
