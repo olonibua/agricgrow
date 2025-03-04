@@ -403,7 +403,7 @@ export default function CropCalendarTab() {
                 <span className="text-primary mt-1">•</span>
                 <span>
                   Loan repayment schedules should be aligned with expected
-                  harvest time ({cropInfo?.harvestMonthNames.join(", ")}) when
+                  harvest time (${cropInfo?.harvestMonthNames.join(", ")}) when
                   farmers will have income from crop sales.
                 </span>
               </li>
@@ -432,14 +432,14 @@ export default function CropCalendarTab() {
               <li className="text-sm flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span>
-                  Repayment grace period: Allow {cropInfo?.durationDays / 30} months grace period to align with the crop's maturity
+                  Repayment grace period: Allow ${cropInfo?.durationDays / 30} months grace period to align with the crop's maturity
                   timeline.
                 </span>
               </li>
               <li className="text-sm flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
                 <span>
-                  Loan term: For {selectedCrop}, a term of {Math.ceil(cropInfo?.durationDays / 30) + 2} to {Math.ceil(cropInfo?.durationDays / 30) + 4} months is
+                  Loan term: For {selectedCrop}, a term of ${Math.ceil(cropInfo?.durationDays / 30) + 2} to ${Math.ceil(cropInfo?.durationDays / 30) + 4} months is
                   recommended to cover growing period plus post-harvest sales.
                 </span>
               </li>
