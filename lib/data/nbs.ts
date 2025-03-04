@@ -5,6 +5,7 @@
 
 import * as cheerio from 'cheerio';
 import { databases } from '@/lib/appwrite';
+import { Query } from 'appwrite';
 
 const NBS_URL = "https://nigerianstat.gov.ng";
 
@@ -16,6 +17,12 @@ export const DATA_CATEGORIES = {
   ENERGY_PRICES: "energy-price-watch",
   LABOR_FORCE: "labor-force-statistics"
 };
+
+interface NBSReport {
+  title: string;
+  date: string;
+  url: string | null;
+}
 
 /**
  * Scrapes the latest PDF reports from NBS website
@@ -31,7 +38,7 @@ export async function getLatestReports() {
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    const reports = [];
+    const reports: NBSReport[] = [];
     
     // Find the latest reports (implementation depends on website structure)
     $('.report-item').each((i, el) => {
@@ -47,8 +54,8 @@ export async function getLatestReports() {
     });
     
     return reports;
-  } catch (error) {
-    console.error("Error scraping NBS website:", error);
+  } catch  {
+    console.error("Error scraping NBS website:");
     return [];
   }
 }
@@ -74,8 +81,8 @@ export async function getCachedNBSData(category: string) {
     }
     
     return null;
-  } catch (error) {
-    console.error(`Error fetching cached NBS data for ${category}:`, error);
+  } catch  {
+    console.error(`Error fetching cached NBS data for ${category}:`);
     return null;
   }
 }

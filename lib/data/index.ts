@@ -7,6 +7,7 @@ import * as WorldBank from './world-bank';
 import * as NiMet from './nimet';
 import * as NBS from './nbs';
 import { databases } from '@/lib/appwrite';
+import { Query } from 'appwrite';
 
 /**
  * Gets economic indicators with fallback

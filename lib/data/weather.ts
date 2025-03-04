@@ -56,8 +56,8 @@ export async function getCurrentWeather(location: string): Promise<WeatherData |
       rainfall: data.rain ? data.rain["1h"] || 0 : 0,
       icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`
     };
-  } catch (error) {
-    console.error(`Error fetching weather for ${location}:`, error);
+  } catch {
+    console.error(`Error fetching weather for ${location}:`);
     
     // Add fallback mock data when API fails
     console.log(`Generating mock weather data for ${location}`);
@@ -143,8 +143,8 @@ export async function getWeatherForecast(location: string): Promise<ForecastData
       location: data.city.name,
       forecast
     };
-  } catch (error) {
-    console.error(`Error fetching forecast for ${location}:`, error);
+  } catch  {
+    console.error(`Error fetching forecast for ${location}:`);
     return null;
   }
 }

@@ -1,4 +1,4 @@
-// import { Client, Databases, Query } from 'node-appwrite';
+// import { Client, Databases, Query } from 'appwrite';
 // import { sendSMS } from '../utils/africas-talking';
 
 // // Initialize Appwrite

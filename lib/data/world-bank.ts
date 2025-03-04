@@ -49,8 +49,8 @@ export async function fetchIndicator(indicatorCode: string, countryCode = "NGA")
     
     const data = await response.json();
     return data[1] as IndicatorData[]; // World Bank returns metadata in [0] and actual data in [1]
-  } catch (error) {
-    console.error(`Error fetching World Bank indicator ${indicatorCode}:`, error);
+  } catch  {
+    console.error(`Error fetching World Bank indicator ${indicatorCode}:`);
     return null;
   }
 }

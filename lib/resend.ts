@@ -23,8 +23,8 @@ export async function sendEmail({ to, subject, html }: { to: string, subject: st
       html,
     });
     return { success: true, data };
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return { success: false, error };
+  } catch {
+    console.error('Error sending email:');
+    return { success: false, };
   }
 } 

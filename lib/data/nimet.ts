@@ -42,8 +42,8 @@ export async function getCurrentWeather(location: string): Promise<WeatherData |
     }
     
     return await response.json();
-  } catch (error) {
-    console.error(`Error fetching current weather for ${location}:`, error);
+  } catch {
+    console.error(`Error fetching current weather for ${location}:`);
     return null;
   }
 }
@@ -72,8 +72,8 @@ export async function getWeatherForecast(location: string, days = 3) {
     }
     
     return await response.json();
-  } catch (error) {
-    console.error(`Error fetching weather forecast for ${location}:`, error);
+  } catch  {
+    console.error(`Error fetching weather forecast for ${location}:`);
     return null;
   }
 }
