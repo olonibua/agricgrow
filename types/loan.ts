@@ -33,6 +33,7 @@ export interface LoanApplication extends BaseApplication {
   disbursementDate?: string;
   repaymentDate?: string;
   interestRate?: number;
+  [key: string]: string | number | boolean | undefined | Date;
 }
 
 export interface RepaymentSchedule {

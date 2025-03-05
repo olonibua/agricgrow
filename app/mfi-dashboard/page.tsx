@@ -6,7 +6,7 @@ import ApplicationsTab from '@/components/mfi-dashboard/applications-tab';
 import CropCalendarTab from '@/components/mfi-dashboard/crop-calendar-tab';
 import SettingsTab from '@/components/mfi-dashboard/settings-tab';
 import AnalyticsTab from '@/components/mfi-dashboard/analytics-tab';
-import { LoanApplication } from '@/types';
+import { LoanApplication } from '@/types/loan';
 
 export default function MFIDashboardPage() {
   const [activeTab, setActiveTab] = useState("applications");

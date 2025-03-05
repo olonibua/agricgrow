@@ -11,6 +11,7 @@ import { Search, ArrowUpDown } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import CropViabilityAnalysis from './crop-viability-analysis';
 import ApplicationDetails from './application-details';
+import { LoanApplication } from '@/types/loan';
 
 // Common crops in Nigeria
 const CROPS = [
@@ -24,38 +25,6 @@ const CROPS = [
   { id: "groundnut", name: "Groundnut" },
   { id: "sorghum", name: "Sorghum" }
 ];
-
-interface LoanApplication {
-  $id: string;
-  fullName: string;
-  farmerId: string;
-  amount: number;
-  cropType: string;
-  applicationDate?: string;
-  createdAt: string;
-  riskScore: number;
-  status: string;
-  approvalDate?: string;
-  rejectionDate?: string;
-  phone: string;
-  email: string;
-  address: string;
-  lga: string;
-  state: string;
-  purpose: string;
-  farmingType: string;
-  farmSize: number;
-  farmLocation: string;
-  hasIrrigation: boolean;
-  expectedHarvestDate: string;
-  estimatedYield: number;
-  estimatedRevenue: number;
-  marketStrategy: string;
-  riskExplanation?: string;
-  loanType?: string;
-  repaymentPeriod?: string;
-  [key: string]: string | number | boolean | undefined;
-}
 
 interface ApplicationsTabProps {
   applications: LoanApplication[];
@@ -127,7 +96,7 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
       if (app.$id === application.$id) {
         return {
           ...app,
-          status: 'approved',
+          status: 'approved' as 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted',
           approvalDate: new Date().toISOString()
         };
       }
@@ -143,7 +112,7 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
       if (app.$id === application.$id) {
         return {
           ...app,
-          status: 'rejected',
+          status: 'rejected' as 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted',
           rejectionDate: new Date().toISOString()
         };
       }
