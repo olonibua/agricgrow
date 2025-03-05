@@ -118,7 +118,7 @@ export async function createAccount(
     }
     
     return newAccount;
-  } catch (error) {
+  } catch (error: unknown ) {
     console.error('Error creating account:', error);
     throw error;
   }
@@ -127,7 +127,7 @@ export async function createAccount(
 export async function login(email: string, password: string) {
   try {
     return await account.createEmailPasswordSession(email, password);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error logging in:', error);
     throw error;
   }
@@ -136,7 +136,7 @@ export async function login(email: string, password: string) {
 export async function logout() {
   try {
     return await account.deleteSession('current');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error logging out:', error);
     throw error;
   }
@@ -145,7 +145,7 @@ export async function logout() {
 export async function getCurrentUser() {
   try {
     return await account.get();
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error getting current user:', error);
     return null;
   }
@@ -162,7 +162,7 @@ export async function getUserProfile(userId: string, userType: 'farmer' | 'imf')
     );
     
     return documents.documents[0];
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error getting user profile:', error);
     return null;
   }
