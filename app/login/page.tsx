@@ -97,7 +97,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <p className="text-sm text-muted-foreground">
-            Don't have an account yet?
+            Don&apos;t have an account yet?
           </p>
           <div className="flex flex-col space-y-2 w-full">
             <Link href="/register/farmer">

@@ -100,13 +100,13 @@ export default function IMFRegistrationPage() {
       
       // The auth context will handle the redirect to the dashboard
       router.push('/imf-dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
       
       // Check if it's a network error and we should retry
-      if (error.message?.includes('Failed to fetch') || 
+      if (error instanceof Error && (error.message?.includes('Failed to fetch') || 
           error.message?.includes('network') ||
-          error.message?.includes('ERR_')) {
+          error.message?.includes('ERR_'))) {
         
         if (retryCount < 3) {
           setError(`Network error. Retrying... (${retryCount + 1}/3)`);
@@ -120,7 +120,7 @@ export default function IMFRegistrationPage() {
         }
       }
       
-      setError(error.message || 'Failed to register. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to register. Please try again.');
     } finally {
       setIsLoading(false);
     }
