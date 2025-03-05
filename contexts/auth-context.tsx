@@ -1,39 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { account, FARMERS_COLLECTION_ID, DATABASE_ID, getCurrentUser, getUserProfile, IMF_COLLECTION_ID } from '@/lib/appwrite';
+import { account, databases } from '@/lib/appwrite';
 import { useRouter } from 'next/navigation';
-import { databases } from '@/lib/appwrite';
-import { ID } from 'appwrite';
-
-async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3, delay = 1000): Promise<T> {
-  let lastError;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error: unknown) {
-      lastError = error;
-      console.log(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
-      
-      // If it's not a network error, don't retry
-      if (!(error instanceof Error) || 
-          !error.message?.includes('Failed to fetch') && 
-          !error.message?.includes('network') &&
-          !error.message?.includes('ERR_')) {
-        throw error;
-      }
-      
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
-      // Increase delay for next attempt (exponential backoff)
-      delay *= 2;
-    }
-  }
-  
-  throw lastError;
-}
+import { ID, Query } from 'appwrite';
+import { FARMERS_COLLECTION_ID, DATABASE_ID, IMF_COLLECTION_ID } from '@/lib/appwrite';
 
 type UserType = 'farmer' | 'imf' | null;
 
@@ -80,37 +51,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  // Helper function to get user profile
+  const getUserProfile = async (userId: string, type: 'farmer' | 'imf') => {
+    try {
+      const collectionId = type === 'farmer' ? FARMERS_COLLECTION_ID : IMF_COLLECTION_ID;
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        collectionId,
+        [Query.equal('userId', userId)]
+      );
+      
+      return response.documents.length > 0 ? response.documents[0] : null;
+    } catch (error: unknown) {
+      console.error(`Error getting ${type} profile:`, error);
+      return null;
+    }
+  };
+
+  // Check user on mount
   useEffect(() => {
     const checkUser = async () => {
       try {
-        // Try to get the current session
-        const currentSession = await withRetry(() => 
-          account.getSession('current')
-        ).catch(() => null);
-        
-        if (currentSession) {
-          const currentUser = await getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-            
-            // Check if user is a farmer
-            const farmerProfile = await getUserProfile(currentUser.$id, 'farmer');
-            if (farmerProfile) {
-              setUserType('farmer');
-              setUserProfile(farmerProfile);
-            } else {
-              // Check if user is an IMF
-              const imfProfile = await getUserProfile(currentUser.$id, 'imf');
-              if (imfProfile) {
-                setUserType('imf');
-                setUserProfile(imfProfile);
-              }
+        // Try to get current user
+        const currentUser = await account.get();
+        if (currentUser) {
+          setUser(currentUser);
+          
+          // Check if user is a farmer
+          const farmerProfile = await getUserProfile(currentUser.$id, 'farmer');
+          if (farmerProfile) {
+            setUserType('farmer');
+            setUserProfile(farmerProfile);
+          } else {
+            // Check if user is an IMF
+            const imfProfile = await getUserProfile(currentUser.$id, 'imf');
+            if (imfProfile) {
+              setUserType('imf');
+              setUserProfile(imfProfile);
             }
           }
         }
       } catch (error: unknown) {
-        console.error('Error checking user:', error);
-        // Clear state on error
+        // No active session
         setUser(null);
         setUserType(null);
         setUserProfile(null);
@@ -126,42 +108,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      // First check if there's an active session and delete it if needed
-      try {
-        const currentSession = await account.getSession('current');
-        if (currentSession) {
-          // If the session exists but is for a different user, delete it
-          await account.deleteSession('current');
-        }
-      } catch (sessionError) {
-        // If there's no session or error checking, just continue with login
-        console.log("No active session found or error checking session");
-      }
+      // Create session
+      await account.createEmailPasswordSession(email, password);
       
-      // Now create the new session
-      await withRetry(() => 
-        account.createEmailPasswordSession(email, password)
-      );
+      // Get user details
+      const currentUser = await account.get();
+      setUser(currentUser);
       
-      const currentUser = await getCurrentUser();
-      
-      if (currentUser) {
-        setUser(currentUser);
-        
-        // Check if user is a farmer
-        const farmerProfile = await getUserProfile(currentUser.$id, 'farmer');
-        if (farmerProfile) {
-          setUserType('farmer');
-          setUserProfile(farmerProfile);
-          router.push('/dashboard');
-        } else {
-          // Check if user is an IMF
-          const imfProfile = await getUserProfile(currentUser.$id, 'imf');
-          if (imfProfile) {
-            setUserType('imf');
-            setUserProfile(imfProfile);
-            router.push('/imf-dashboard');
-          }
+      // Check if user is a farmer
+      const farmerProfile = await getUserProfile(currentUser.$id, 'farmer');
+      if (farmerProfile) {
+        setUserType('farmer');
+        setUserProfile(farmerProfile);
+        router.push('/dashboard');
+      } else {
+        // Check if user is an IMF
+        const imfProfile = await getUserProfile(currentUser.$id, 'imf');
+        if (imfProfile) {
+          setUserType('imf');
+          setUserProfile(imfProfile);
+          router.push('/imf-dashboard');
         }
       }
     } catch (error: unknown) {
@@ -199,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Create the account in Appwrite Auth - fix argument count
+      // Create the account in Appwrite Auth
       const newAccount = await account.create(
         ID.unique(),
         email,
@@ -258,7 +224,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) => {
     try {
       setIsLoading(true);
-      // Fix argument count - Appwrite account.create only accepts 4 arguments
+      
+      // Create the account in Appwrite Auth
       const newAccount = await account.create(
         ID.unique(),
         email,
@@ -288,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       
       await login(email, password);
-    } catch (error: unknown) {
+    } catch (error: unknown ) {
       console.error('IMF registration error:', error);
       throw error;
     } finally {
@@ -318,76 +285,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-export async function createAccount(
-  email: string, 
-  password: string, 
-  name: string, 
-  userType: 'farmer' | 'imf',
-  additionalData?: {
-    phone?: string;
-    address?: string;
-    state?: string;
-    lga?: string;
-  }
-) {
-  try {
-    // Create the account with retry logic
-    const newAccount = await withRetry(() => 
-      account.create(
-        ID.unique(),
-        email,
-        password,
-        name
-      )
-    );
-    
-    // Store additional user data based on type
-    if (userType === 'farmer') {
-      await withRetry(() => 
-        databases.createDocument(
-          DATABASE_ID,
-          FARMERS_COLLECTION_ID,
-          ID.unique(),
-          {
-            userId: newAccount.$id,
-            name,
-            email,
-            phone: additionalData?.phone || null,
-            address: additionalData?.address || null,
-            state: additionalData?.state || null,
-            lga: additionalData?.lga || null,
-            registrationDate: new Date().toISOString(),
-            status: 'active',
-            farmSize: 0,
-            primaryCrop: '',
-            secondaryCrop: '',
-            hasIrrigation: false,
-            creditScore: 65
-          }
-        )
-      );
-    } else {
-      await withRetry(() => 
-        databases.createDocument(
-          DATABASE_ID,
-          IMF_COLLECTION_ID,
-          ID.unique(),
-          {
-            userId: newAccount.$id,
-            name,
-            email,
-            registrationDate: new Date().toISOString(),
-            status: 'pending' // IMF Partners need approval
-          }
-        )
-      );
-    }
-    
-    return newAccount;
-  } catch (error) {
-    console.error('Error creating account:', error);
-    throw error;
-  }
 } 
