@@ -43,15 +43,15 @@ const normalizeRiskScore = (score: number): number => {
 };
 
 // Get risk category based on normalized score
-const getRiskCategory = (score: number): string => {
-  const normalizedScore = normalizeRiskScore(score);
+// const getRiskCategory = (score: number): string => {
+//   const normalizedScore = normalizeRiskScore(score);
   
-  if (normalizedScore <= 20) return "Very Low Risk";
-  if (normalizedScore <= 40) return "Low Risk";
-  if (normalizedScore <= 60) return "Moderate Risk";
-  if (normalizedScore <= 80) return "High Risk";
-  return "Very High Risk";
-};
+//   if (normalizedScore <= 20) return "Very Low Risk";
+//   if (normalizedScore <= 40) return "Low Risk";
+//   if (normalizedScore <= 60) return "Moderate Risk";
+//   if (normalizedScore <= 80) return "High Risk";
+//   return "Very High Risk";
+// };
 
 export default function ApplicationsTab({ applications, onApplicationsUpdate }: ApplicationsTabProps) {
   const [filteredApplications, setFilteredApplications] = useState<LoanApplication[]>(applications);

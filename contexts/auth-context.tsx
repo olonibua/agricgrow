@@ -12,12 +12,13 @@ async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3, delay =
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
       console.log(`Attempt ${attempt} failed. Retrying in ${delay}ms...`);
       
       // If it's not a network error, don't retry
-      if (!error.message?.includes('Failed to fetch') && 
+      if (!(error instanceof Error) || 
+          !error.message?.includes('Failed to fetch') && 
           !error.message?.includes('network') &&
           !error.message?.includes('ERR_')) {
         throw error;

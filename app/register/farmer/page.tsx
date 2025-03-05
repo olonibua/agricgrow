@@ -92,9 +92,9 @@ export default function FarmerRegistrationPage() {
       );
       
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
-      setError(error.message || 'Failed to register. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to register. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -41,9 +41,9 @@ export default function LoginPage() {
       setIsLoading(true);
       await login(formData.email, formData.password);
       // The redirect will be handled in the login function in AuthContext
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      setError(error.message || 'Invalid email or password');
+      setError(error instanceof Error ? error.message : 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }

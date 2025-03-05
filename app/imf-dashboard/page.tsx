@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ApplicationsTab from '@/components/mfi-dashboard/applications-tab';
-import CropCalendarTab from '@/components/mfi-dashboard/crop-calendar-tab';
-import SettingsTab from '@/components/mfi-dashboard/settings-tab';
-import AnalyticsTab from '@/components/mfi-dashboard/analytics-tab';
+import ApplicationsTab from '@/components/imf-dashboard/applications-tab';
+import CropCalendarTab from '@/components/imf-dashboard/crop-calendar-tab';
+import SettingsTab from '@/components/imf-dashboard/settings-tab';
+import AnalyticsTab from '@/components/imf-dashboard/analytics-tab';
 import { LoanApplication } from '@/types/loan';
 import { useAuth } from '@/contexts/auth-context';
 import { getAllLoanApplications } from '@/lib/appwrite';

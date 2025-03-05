@@ -217,7 +217,7 @@ export async function getLoanApplications(userId: string) {
       if (farmerProfile) {
         farmerId = farmerProfile.$id;
       }
-    } catch (error: unknown) {
+    } catch {
       console.log("Could not find farmer profile, using userId as farmerId");
     }
     

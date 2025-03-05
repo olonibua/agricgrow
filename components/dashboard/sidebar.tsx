@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
   FileText, 
-  User, 
   BarChart3, 
   Calendar, 
   Settings,
