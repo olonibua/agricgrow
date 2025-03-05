@@ -24,7 +24,7 @@ export default function SettingsTab() {
 
   const handleSave = () => {
     // In a real app, this would save to a database or API
-    localStorage.setItem('mfiSettings', JSON.stringify(settings));
+    localStorage.setItem('imfSettings', JSON.stringify(settings));
     alert('Settings saved successfully!');
   };
 
@@ -32,7 +32,7 @@ export default function SettingsTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>MFI Dashboard Settings</CardTitle>
+          <CardTitle>IMF Dashboard Settings</CardTitle>
           <CardDescription>Manage your preferences and organization details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

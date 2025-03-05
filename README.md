@@ -2,7 +2,7 @@
 
 ## Harvest-Cycle-Aligned Microloans for Nigerian Farmers
 
-AgriGrow Finance is a platform that connects microfinance institutions (MFIs) with smallholder farmers in Nigeria, providing loans that align with harvest cycles and using AI to assess risk.
+AgriGrow Finance is a platform that connects microfinance institutions (IMFs) with smallholder farmers in Nigeria, providing loans that align with harvest cycles and using AI to assess risk.
 
 ![AgriGrow Finance](https://placeholder-for-agrigrow-logo.com/logo.png)
 
@@ -12,7 +12,7 @@ AgriGrow Finance addresses the unique challenges faced by smallholder farmers in
 
 1. **Aligning loan repayments with harvest cycles** - Ensuring farmers can repay when they have income
 2. **Using AI for risk assessment** - Analyzing weather data, crop prices, and farm details for fair evaluations
-3. **Providing MFIs with agricultural intelligence** - Helping loan officers make informed decisions
+3. **Providing IMF Partners with agricultural intelligence** - Helping loan officers make informed decisions
 4. **Simplifying the loan application process** - Making financing accessible to farmers
 
 ## 🚀 Features
@@ -50,10 +50,10 @@ app/                  # Next.js app directory
 ├── apply/            # Loan application page
 ├── dashboard/        # Farmer dashboard
 ├── loans/            # Loan details pages
-├── mfi-dashboard/    # MFI dashboard
+├── imf-dashboard/    # IMF dashboard
 components/           # React components
 ├── ui/               # UI components (shadcn)
-├── mfi-dashboard/    # MFI dashboard components
+├── imf-dashboard/    # IMF dashboard components
 lib/                  # Utility functions and shared code
 ├── data/             # Data fetching functions
 ├── utils.ts          # Helper functions

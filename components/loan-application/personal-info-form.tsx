@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,6 +33,40 @@ interface PersonalInfoFormProps {
 export default function PersonalInfoForm({ data, updateData, onNext }: PersonalInfoFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  // Determine which fields were collected during registration
+  const [registeredFields, setRegisteredFields] = useState({
+    fullName: false,
+    email: false,
+    phone: false,
+    farmerId: true, // Always treat farmerId as registered
+    address: false,
+    state: false,
+    lga: false
+  });
+  
+  // Check which fields are pre-filled from registration
+  useEffect(() => {
+    console.log("PersonalInfoForm received data:", data);
+    console.log("Registered fields determined:", {
+      fullName: !!data.fullName,
+      email: !!data.email,
+      phone: !!data.phone,
+      farmerId: true,
+      address: !!data.address,
+      state: !!data.state,
+      lga: !!data.lga
+    });
+    setRegisteredFields({
+      fullName: !!data.fullName,
+      email: !!data.email,
+      phone: !!data.phone,
+      farmerId: true, // Always treat farmerId as registered
+      address: !!data.address,
+      state: !!data.state,
+      lga: !!data.lga
+    });
+  }, [data]);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     updateData({ [name]: value });
@@ -45,31 +79,30 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!data.fullName || data.fullName.length < 3) {
+    // Only validate fields that aren't pre-filled from registration
+    if (!registeredFields.fullName && (!data.fullName || data.fullName.length < 3)) {
       newErrors.fullName = "Full name must be at least 3 characters";
     }
     
-    if (!data.email || !/^\S+@\S+\.\S+$/.test(data.email)) {
+    if (!registeredFields.email && (!data.email || !/^\S+@\S+\.\S+$/.test(data.email))) {
       newErrors.email = "Please enter a valid email address";
     }
     
-    if (!data.phone || data.phone.length < 11) {
+    if (!registeredFields.phone && (!data.phone || data.phone.length < 11)) {
       newErrors.phone = "Phone number must be at least 11 digits";
     }
     
-    if (!data.farmerId || data.farmerId.length < 3) {
-      newErrors.farmerId = "Farmer ID must be at least 3 characters";
-    }
+    // FarmerId is always pre-filled, so we can skip validation
     
-    if (!data.address || data.address.length < 10) {
+    if (!registeredFields.address && (!data.address || data.address.length < 10)) {
       newErrors.address = "Address must be at least 10 characters";
     }
     
-    if (!data.state) {
+    if (!registeredFields.state && !data.state) {
       newErrors.state = "Please select a state";
     }
     
-    if (!data.lga || data.lga.length < 2) {
+    if (!registeredFields.lga && (!data.lga || data.lga.length < 2)) {
       newErrors.lga = "LGA must be at least 2 characters";
     }
     
@@ -96,7 +129,12 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
             value={data.fullName}
             onChange={handleChange}
             placeholder="John Doe"
+            disabled={registeredFields.fullName}
+            className={registeredFields.fullName ? "bg-gray-50" : ""}
           />
+          {registeredFields.fullName && (
+            <p className="text-xs text-muted-foreground">Pre-filled from your profile</p>
+          )}
           {errors.fullName && <p className="text-sm text-red-500">{errors.fullName}</p>}
         </div>
         
@@ -108,7 +146,10 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
             value={data.farmerId}
             onChange={handleChange}
             placeholder="FRM12345"
+            disabled={true}
+            className="bg-gray-50"
           />
+          <p className="text-xs text-muted-foreground">Auto-generated from your profile</p>
           {errors.farmerId && <p className="text-sm text-red-500">{errors.farmerId}</p>}
         </div>
       </div>
@@ -123,7 +164,12 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
             value={data.email}
             onChange={handleChange}
             placeholder="john.doe@example.com"
+            disabled={registeredFields.email}
+            className={registeredFields.email ? "bg-gray-50" : ""}
           />
+          {registeredFields.email && (
+            <p className="text-xs text-muted-foreground">Pre-filled from your profile</p>
+          )}
           {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
         </div>
         
@@ -135,7 +181,12 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
             value={data.phone}
             onChange={handleChange}
             placeholder="08012345678"
+            disabled={registeredFields.phone}
+            className={registeredFields.phone ? "bg-gray-50" : ""}
           />
+          {registeredFields.phone && (
+            <p className="text-xs text-muted-foreground">Pre-filled from your profile</p>
+          )}
           {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
         </div>
       </div>
@@ -148,7 +199,12 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
           value={data.address}
           onChange={handleChange}
           placeholder="123 Main Street"
+          disabled={registeredFields.address}
+          className={registeredFields.address ? "bg-gray-50" : ""}
         />
+        {registeredFields.address && (
+          <p className="text-xs text-muted-foreground">Pre-filled from your profile</p>
+        )}
         {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
       </div>
       
@@ -158,8 +214,9 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
           <Select 
             value={data.state} 
             onValueChange={(value) => handleSelectChange('state', value)}
+            disabled={registeredFields.state}
           >
-            <SelectTrigger id="state">
+            <SelectTrigger id="state" className={registeredFields.state ? "bg-gray-50" : ""}>
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>
@@ -168,6 +225,9 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
               ))}
             </SelectContent>
           </Select>
+          {registeredFields.state && (
+            <p className="text-xs text-muted-foreground">Pre-filled from your profile</p>
+          )}
           {errors.state && <p className="text-sm text-red-500">{errors.state}</p>}
         </div>
         
@@ -179,7 +239,12 @@ export default function PersonalInfoForm({ data, updateData, onNext }: PersonalI
             value={data.lga}
             onChange={handleChange}
             placeholder="Ikeja"
+            disabled={registeredFields.lga}
+            className={registeredFields.lga ? "bg-gray-50" : ""}
           />
+          {registeredFields.lga && (
+            <p className="text-xs text-muted-foreground">Pre-filled from your profile</p>
+          )}
           {errors.lga && <p className="text-sm text-red-500">{errors.lga}</p>}
         </div>
       </div>

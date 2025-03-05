@@ -31,6 +31,28 @@ interface ApplicationsTabProps {
   onApplicationsUpdate: (applications: LoanApplication[]) => void;
 }
 
+// Add these utility functions at the top of the file
+const normalizeRiskScore = (score: number): number => {
+  // If score is outside the 0-100 range, normalize it
+  if (score > 100) {
+    return 100;
+  } else if (score < 0) {
+    return 0;
+  }
+  return score;
+};
+
+// Get risk category based on normalized score
+const getRiskCategory = (score: number): string => {
+  const normalizedScore = normalizeRiskScore(score);
+  
+  if (normalizedScore <= 20) return "Very Low Risk";
+  if (normalizedScore <= 40) return "Low Risk";
+  if (normalizedScore <= 60) return "Moderate Risk";
+  if (normalizedScore <= 80) return "High Risk";
+  return "Very High Risk";
+};
+
 export default function ApplicationsTab({ applications, onApplicationsUpdate }: ApplicationsTabProps) {
   const [filteredApplications, setFilteredApplications] = useState<LoanApplication[]>(applications);
   const [searchTerm, setSearchTerm] = useState("");
@@ -225,10 +247,10 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
                       <TableCell>{formatDate(application.applicationDate || application.createdAt)}</TableCell>
                       <TableCell>
                         <Badge variant={
-                          application.riskScore >= 70 ? "default" : 
-                          application.riskScore >= 40 ? "secondary" : "destructive"
+                          normalizeRiskScore(application.riskScore) >= 70 ? "destructive" : 
+                          normalizeRiskScore(application.riskScore) >= 40 ? "secondary" : "default"
                         }>
-                          {application.riskScore}%
+                          {normalizeRiskScore(application.riskScore)}%
                         </Badge>
                       </TableCell>
                       <TableCell>

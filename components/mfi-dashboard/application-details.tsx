@@ -4,6 +4,28 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+// Add these utility functions at the top of the file
+const normalizeRiskScore = (score: number): number => {
+  // If score is outside the 0-100 range, normalize it
+  if (score > 100) {
+    return 100;
+  } else if (score < 0) {
+    return 0;
+  }
+  return score;
+};
+
+// Get risk category based on normalized score
+const getRiskCategory = (score: number): string => {
+  const normalizedScore = normalizeRiskScore(score);
+  
+  if (normalizedScore <= 20) return "Very Low Risk";
+  if (normalizedScore <= 40) return "Low Risk";
+  if (normalizedScore <= 60) return "Moderate Risk";
+  if (normalizedScore <= 80) return "High Risk";
+  return "Very High Risk";
+};
+
 interface LoanApplication {
   $id: string;
   status: string;
@@ -163,22 +185,29 @@ export default function ApplicationDetails({
           </div>
         </div>
         
-        <div>
-          <h3 className="text-lg font-medium mb-4">Risk Assessment</h3>
-          <div className="space-y-3">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold mb-2">Risk Assessment</h3>
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-sm text-muted-foreground">Risk Score</p>
-                <p className="text-sm font-medium">{application.riskScore}%</p>
-              </div>
+              <p className="text-sm font-medium">Risk Score</p>
+              <p className="text-2xl font-bold">
+                {normalizeRiskScore(application.riskScore)}%
+              </p>
               <Progress 
-                value={application.riskScore} 
-                className="h-2" 
+                value={normalizeRiskScore(application.riskScore)} 
+                className="h-2 mt-2" 
               />
+              <p className="text-sm text-muted-foreground mt-1">
+                {getRiskCategory(application.riskScore)}
+              </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Risk Explanation</p>
-              <p className="text-sm">{application.riskExplanation}</p>
+              <p className="text-sm font-medium">Risk Explanation</p>
+              {application.riskExplanation ? (
+                <p className="text-sm">{application.riskExplanation}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">No risk explanation available</p>
+              )}
             </div>
           </div>
         </div>

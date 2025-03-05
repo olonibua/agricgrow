@@ -25,6 +25,28 @@ interface LoanApplication {
   hasIrrigation?: boolean;
 }
 
+// Add these utility functions for risk score normalization
+const normalizeRiskScore = (score: number): number => {
+  // If score is outside the 0-100 range, normalize it
+  if (score > 100) {
+    return 100;
+  } else if (score < 0) {
+    return 0;
+  }
+  return score;
+};
+
+// Get risk category based on normalized score
+const getRiskCategory = (score: number): string => {
+  const normalizedScore = normalizeRiskScore(score);
+  
+  if (normalizedScore <= 20) return "Very Low Risk";
+  if (normalizedScore <= 40) return "Low Risk";
+  if (normalizedScore <= 60) return "Moderate Risk";
+  if (normalizedScore <= 80) return "High Risk";
+  return "Very High Risk";
+};
+
 interface AnalyticsTabProps {
   applications: LoanApplication[];
 }
@@ -41,10 +63,13 @@ export default function AnalyticsTab({ applications }: AnalyticsTabProps) {
     .filter(app => app.status === 'approved')
     .reduce((sum, app) => sum + (app.amount || 0), 0);
   
-  // Calculate average risk score
+  // Calculate average risk score with normalization
   const avgRiskScore = applications.length > 0 
-    ? Math.round(applications.reduce((sum, app) => sum + (app.riskScore || 0), 0) / applications.length) 
+    ? Math.round(applications.reduce((sum, app) => sum + normalizeRiskScore(app.riskScore || 0), 0) / applications.length) 
     : 0;
+  
+  // Get risk category for the average score
+  const riskCategory = getRiskCategory(avgRiskScore);
   
   // Prepare data for charts
   const statusData = [
@@ -88,6 +113,14 @@ export default function AnalyticsTab({ applications }: AnalyticsTabProps) {
     { name: 'High Risk', value: riskCategories.high, color: '#ef4444' }
   ];
 
+  // Update the risk badge variant logic
+  const getRiskBadgeVariant = (score: number) => {
+    const normalizedScore = normalizeRiskScore(score);
+    if (normalizedScore <= 40) return "default"; // Low risk
+    if (normalizedScore <= 70) return "outline"; // Medium risk
+    return "destructive"; // High risk
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -113,12 +146,8 @@ export default function AnalyticsTab({ applications }: AnalyticsTabProps) {
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="text-2xl font-bold">{avgRiskScore}%</div>
-              <Badge className="ml-2" variant={
-                avgRiskScore >= 70 ? "default" : 
-                avgRiskScore >= 40 ? "outline" : "destructive"
-              }>
-                {avgRiskScore >= 70 ? "Low Risk" : 
-                 avgRiskScore >= 40 ? "Medium Risk" : "High Risk"}
+              <Badge className="ml-2" variant={getRiskBadgeVariant(avgRiskScore)}>
+                {riskCategory}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">Average Risk Score</p>
@@ -229,7 +258,23 @@ export default function AnalyticsTab({ applications }: AnalyticsTabProps) {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={riskData}
+                      data={[
+                        { 
+                          name: 'Low Risk', 
+                          value: applications.filter(app => normalizeRiskScore(app.riskScore) <= 40).length, 
+                          color: '#10b981' 
+                        },
+                        { 
+                          name: 'Medium Risk', 
+                          value: applications.filter(app => normalizeRiskScore(app.riskScore) > 40 && normalizeRiskScore(app.riskScore) <= 70).length, 
+                          color: '#f59e0b' 
+                        },
+                        { 
+                          name: 'High Risk', 
+                          value: applications.filter(app => normalizeRiskScore(app.riskScore) > 70).length, 
+                          color: '#ef4444' 
+                        }
+                      ]}
                       cx="50%"
                       cy="50%"
                       labelLine={false}

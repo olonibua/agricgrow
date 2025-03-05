@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertCircle, ArrowLeft, Calendar, Clock, DollarSign, FileText } from "lucide-react";
+import { getLoanApplication } from "@/lib/appwrite";
 
 // Define interfaces for type safety
 interface LoanApplication {
@@ -33,28 +34,15 @@ export default function LoanDetailsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLoanDetails = () => {
+    const fetchLoanDetails = async () => {
       try {
-        // In a real app, we would fetch this from an API
-        // For now, we'll load it from localStorage
-        const savedApplications = localStorage.getItem('loanApplications');
-        if (savedApplications) {
-          const applications = JSON.parse(savedApplications);
-          const loanDetails = applications.find((app: LoanApplication) => app.$id === params.id);
-          
-          if (loanDetails) {
-            setLoan(loanDetails);
-          } else {
-            setError("Loan application not found");
-          }
-        } else {
-          setError("No loan applications found");
-        }
-        
+        setLoading(true);
+        const loanData = await getLoanApplication(params.id as string);
+        setLoan(loanData as unknown as LoanApplication);
         setLoading(false);
-      } catch (err) {
-        console.error("Error fetching loan details:", err);
-        setError("Failed to load loan details");
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Error fetching loan details';
+        setError(errorMessage);
         setLoading(false);
       }
     };
@@ -163,8 +151,10 @@ export default function LoanDetailsPage() {
                     <span className="font-medium">{loan.riskScore}/100</span>
                   </div>
                   <Progress value={loan.riskScore} className="h-2" />
-                  {loan.riskExplanation && (
+                  {loan.riskExplanation ? (
                     <p className="text-sm text-gray-500 mt-2">{loan.riskExplanation}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-2">No risk explanation available</p>
                   )}
                 </div>
               </div>

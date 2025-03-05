@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         );
         
         response = 'END Your loan application has been submitted successfully. You will receive an SMS with details.';
-      } catch {
+      } catch  {
         response = 'END An error occurred. Please try again later.';
       }
     }

@@ -118,11 +118,12 @@ export default async function assessLoanRisk(req: Request, res: Response) {
       success: true,
       riskAssessment
     });
-  } catch {
-    console.error('Error assessing loan risk:');
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error assessing loan risk';
+    console.error('Error assessing loan risk:', errorMessage);
     return res.status(400).json({
       success: false,
-      error: 'error'
+      error: errorMessage
     });
   }
 } 

@@ -8,22 +8,27 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CalendarIcon, ArrowUpRight, Tractor, Leaf, BarChart3, FileText, AlertCircle, Droplets } from "lucide-react";
+import { useAuth } from '@/contexts/auth-context';
+import { getLoanApplications, getFarmerProfile, databases, DATABASE_ID, FARMERS_COLLECTION_ID } from '@/lib/appwrite';
+import { ID } from 'appwrite';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
 
 // Define interfaces for type safety
 interface FarmerData {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  address: string;
-  state: string;
-  lga: string;
+  phone?: string;
+  address?: string;
+  state?: string;
+  lga?: string;
   registrationDate: string;
-  farmSize: number;
-  primaryCrop: string;
-  secondaryCrop: string;
-  hasIrrigation: boolean;
-  creditScore: number;
+  farmSize?: number;
+  primaryCrop?: string;
+  secondaryCrop?: string;
+  hasIrrigation?: boolean;
+  creditScore?: number;
 }
 
 interface LoanApplication {
@@ -41,49 +46,192 @@ interface LoanApplication {
 export default function FarmerDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [farmerData, setFarmerData] = useState<FarmerData | null>(null);
-  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>(
-    []
-  );
+  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { userProfile, user } = useAuth();
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [farmingEvents, setFarmingEvents] = useState<{
+    date: Date;
+    title: string;
+    description: string;
+    type: 'planting' | 'fertilizer' | 'harvest' | 'other';
+  }[]>([]);
 
   useEffect(() => {
-    // In a real app, we would fetch this data from an API
-    // For now, we'll load it from localStorage
-    const loadData = () => {
+    const loadData = async () => {
       try {
-        // Load farmer profile (mock data for now)
-        const mockFarmerData: FarmerData = {
-          id: "FARMER-123",
-          name: "John Doe",
-          email: "john.doe@example.com",
-          phone: "08012345678",
-          address: "123 Farm Road, Lagos",
-          state: "Lagos",
-          lga: "Ikeja",
-          registrationDate: "2023-01-15",
-          farmSize: 5.5,
-          primaryCrop: "Maize",
-          secondaryCrop: "Cassava",
-          hasIrrigation: true,
-          creditScore: 75,
-        };
-        setFarmerData(mockFarmerData);
+        if (user) {
+          console.log("User data:", user);
+          
+          // Try to get farmer profile from Appwrite
+          let farmerProfile = null;
+          
+          if (userProfile) {
+            farmerProfile = await getFarmerProfile(userProfile.userId || user.$id);
+          }
+          
+          // If no profile found, try with user ID directly
+          if (!farmerProfile && user.$id) {
+            farmerProfile = await getFarmerProfile(user.$id);
+          }
+          
+          console.log("Farmer profile:", farmerProfile);
+          
+          if (farmerProfile) {
+            // Transform Appwrite document to FarmerData
+            const profileData: FarmerData = {
+              id: farmerProfile.$id,
+              name: farmerProfile.name || user.name || 'Farmer',
+              email: farmerProfile.email || user.email || '',
+              phone: farmerProfile.phone || '',
+              address: farmerProfile.address || '',
+              state: farmerProfile.state || '',
+              lga: farmerProfile.lga || '',
+              registrationDate: farmerProfile.registrationDate || new Date().toISOString(),
+              farmSize: farmerProfile.farmSize || 0,
+              primaryCrop: farmerProfile.primaryCrop || 'Maize',
+              secondaryCrop: farmerProfile.secondaryCrop || '',
+              hasIrrigation: farmerProfile.hasIrrigation || false,
+              creditScore: farmerProfile.creditScore || 65,
+            };
+            
+            setFarmerData(profileData);
+          } else {
+            // Create a default profile if none exists
+            console.log("No farmer profile found, creating default data");
+            
+            const defaultProfile = {
+              id: 'default',
+              name: user.name || 'Farmer',
+              email: user.email || '',
+              registrationDate: new Date().toISOString(),
+              creditScore: 65,
+              farmSize: 0,
+              primaryCrop: 'Maize',
+            };
+            
+            setFarmerData(defaultProfile);
+            
+            // Create a profile document in Appwrite
+            try {
+              const newProfile = await databases.createDocument(
+                DATABASE_ID,
+                FARMERS_COLLECTION_ID,
+                ID.unique(),
+                {
+                  userId: user.$id,
+                  name: user.name,
+                  email: user.email,
+                  registrationDate: new Date().toISOString(),
+                  status: 'active',
+                  farmSize: 0,
+                  primaryCrop: 'Maize',
+                  secondaryCrop: '',
+                  hasIrrigation: false,
+                  creditScore: 65
+                }
+              );
+              console.log("Created new farmer profile:", newProfile);
+            } catch (profileError) {
+              console.error("Error creating farmer profile:", profileError);
+            }
+          }
 
-        // Load loan applications from localStorage
-        const savedApplications = localStorage.getItem("loanApplications");
-        if (savedApplications) {
-          setLoanApplications(JSON.parse(savedApplications));
+          // Load loan applications from Appwrite
+          const userId = userProfile?.userId || user.$id;
+          const applications = await getLoanApplications(userId);
+          setLoanApplications(applications as unknown as LoanApplication[]);
         }
-
         setIsLoading(false);
-      } catch (error) {
-        console.error("Error loading dashboard data:", error);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Error loading dashboard data';
+        console.error("Error loading dashboard data:", errorMessage);
         setIsLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [userProfile, user]);
+
+  useEffect(() => {
+    if (farmerData?.primaryCrop) {
+      // Generate sample farming events based on the primary crop
+      const currentYear = new Date().getFullYear();
+      const events = [
+        {
+          date: new Date(currentYear, 2, 15), // March 15
+          title: "Planting Season Begins",
+          description: `Optimal time to plant ${farmerData.primaryCrop}`,
+          type: 'planting' as const
+        },
+        {
+          date: new Date(currentYear, 3, 30), // April 30
+          title: "Planting Season Ends",
+          description: `Last recommended date for planting ${farmerData.primaryCrop}`,
+          type: 'planting' as const
+        },
+        {
+          date: new Date(currentYear, 4, 10), // May 10
+          title: "Fertilizer Application Begins",
+          description: `Start applying NPK fertilizer to ${farmerData.primaryCrop}`,
+          type: 'fertilizer' as const
+        },
+        {
+          date: new Date(currentYear, 4, 25), // May 25
+          title: "Fertilizer Application Ends",
+          description: `Complete fertilizer application for ${farmerData.primaryCrop}`,
+          type: 'fertilizer' as const
+        },
+        {
+          date: new Date(currentYear, 7, 20), // August 20
+          title: "Harvest Period Begins",
+          description: `Start harvesting ${farmerData.primaryCrop}`,
+          type: 'harvest' as const
+        },
+        {
+          date: new Date(currentYear, 8, 15), // September 15
+          title: "Harvest Period Ends",
+          description: `Complete harvesting of ${farmerData.primaryCrop}`,
+          type: 'harvest' as const
+        },
+        {
+          date: new Date(currentYear, 9, 10), // October 10
+          title: "Post-Harvest Processing",
+          description: `Begin processing and storage of ${farmerData.primaryCrop}`,
+          type: 'other' as const
+        },
+        {
+          date: new Date(currentYear, 10, 5), // November 5
+          title: "Market Preparation",
+          description: `Prepare ${farmerData.primaryCrop} for market`,
+          type: 'other' as const
+        }
+      ];
+      
+      setFarmingEvents(events);
+    }
+  }, [farmerData?.primaryCrop]);
+
+  // Function to get events for a specific date
+  const getEventsForDate = (date: Date | undefined) => {
+    if (!date) return [];
+    
+    return farmingEvents.filter(event => 
+      event.date.getDate() === date.getDate() && 
+      event.date.getMonth() === date.getMonth() && 
+      event.date.getFullYear() === date.getFullYear()
+    );
+  };
+  
+  // Function to determine if a date has events
+  const dateHasEvent = (date: Date) => {
+    return farmingEvents.some(event => 
+      event.date.getDate() === date.getDate() && 
+      event.date.getMonth() === date.getMonth() && 
+      event.date.getFullYear() === date.getFullYear()
+    );
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +250,7 @@ export default function FarmerDashboard() {
         <div>
           <h1 className="text-3xl font-bold">Farmer Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {farmerData?.name}
+            Welcome back, {farmerData?.name || 'Farmer'}
           </p>
         </div>
         <Button asChild className="mt-4 md:mt-0">
@@ -291,7 +439,11 @@ export default function FarmerDashboard() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setIsCalendarModalOpen(true)}
+                >
                   View Full Calendar
                 </Button>
               </CardFooter>
@@ -827,6 +979,94 @@ export default function FarmerDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Farming Calendar Modal */}
+      <Dialog open={isCalendarModalOpen} onOpenChange={setIsCalendarModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Farming Calendar</DialogTitle>
+            <DialogDescription>
+              View all farming activities for your {farmerData?.primaryCrop} crop
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border"
+                modifiers={{
+                  event: (date) => dateHasEvent(date)
+                }}
+                modifiersClassNames={{
+                  event: "bg-primary/10 font-bold text-primary"
+                }}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">
+                {selectedDate ? selectedDate.toLocaleDateString('en-US', { 
+                  month: 'long', 
+                  day: 'numeric',
+                  year: 'numeric'
+                }) : 'Select a date'}
+              </h3>
+              
+              {getEventsForDate(selectedDate).length > 0 ? (
+                <div className="space-y-3">
+                  {getEventsForDate(selectedDate).map((event, index) => (
+                    <div key={index} className="border rounded-lg p-3">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-full ${
+                          event.type === 'planting' ? 'bg-green-100 text-green-700' :
+                          event.type === 'fertilizer' ? 'bg-blue-100 text-blue-700' :
+                          event.type === 'harvest' ? 'bg-amber-100 text-amber-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          <CalendarIcon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{event.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {event.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No events scheduled for this date</p>
+              )}
+              
+              <div className="pt-4">
+                <h4 className="text-sm font-medium mb-2">Legend</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span>Planting</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                    <span>Fertilizer</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+                    <span>Harvest</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-gray-500 mr-2"></div>
+                    <span>Other</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

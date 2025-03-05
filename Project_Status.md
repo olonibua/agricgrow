@@ -5,10 +5,15 @@ AgriGrow Finance is a platform connecting microfinance institutions (MFIs) with 
 
 ## Current Status
 - Core functionality implemented
-- Type system centralization in progress
+- Type system centralization completed
 - API integrations with Appwrite established
 - Weather and crop data services operational
 - UI components using shadcn/ui library
+- Loan application workflow completed
+- Farmer dashboard with calendar functionality implemented
+- Form validation and error handling improved
+- Risk assessment explanation and visualization implemented
+- Error handling updated for Vercel deployment compliance
 
 ## Development Guidelines
 
@@ -20,7 +25,7 @@ AgriGrow Finance is a platform connecting microfinance institutions (MFIs) with 
 - Always export interfaces used across multiple files
 
 ### Code Quality
-- **No undefined types**: Never use `(error)` as a placeholder in code
+- **No undefined types**: Never use `(error)` as a catch block of a try statement or any other error emitting component in code
 - **No unused variables**: All declared variables must be used or prefixed with underscore
 - **Proper error handling**: Include try/catch blocks for async operations
 - **Type safety**: Use proper TypeScript types for all variables and function parameters
@@ -49,10 +54,20 @@ AgriGrow Finance is a platform connecting microfinance institutions (MFIs) with 
 - Follow the established error handling pattern
 
 ## Critical Areas
-- Loan application workflow
 - Risk assessment algorithm
 - Repayment scheduling
 - Weather and crop data integration
+- Loan application display in farmer dashboard
+
+## Recent Improvements
+- Fixed loan application submission process
+- Implemented farming calendar with modal view
+- Improved form validation for pre-filled fields
+- Enhanced error handling for Appwrite database operations
+- Fixed data fetching in dashboard to properly display loan applications
+- Implemented risk explanation display in loan details
+- Updated error handling to use proper TypeScript typing
+- Fixed type issues for Vercel deployment
 
 ## LLM Guidelines
 1. **Preserve Working Functionality**: Do not modify working code unless specifically requested
@@ -65,8 +80,13 @@ AgriGrow Finance is a platform connecting microfinance institutions (MFIs) with 
 5. **Documentation**: Add comments for complex logic
 
 ## Next Steps
-1. Complete type centralization
-2. Implement remaining API integrations
-3. Enhance risk assessment algorithm
-4. Improve mobile responsiveness
-5. Add comprehensive testing
+1. Implement remaining API integrations
+2. Enhance risk assessment algorithm
+3. Improve mobile responsiveness
+4. Add comprehensive testing
+5. Implement notification system for loan status updates
+6. Add data visualization for farm performance metrics
+7. Enhance MFI dashboard with more detailed analytics
+
+## Dependencies to Install
+- For calendar functionality: `npx shadcn-ui@latest add calendar`

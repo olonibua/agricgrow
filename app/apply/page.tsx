@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,10 +14,12 @@ import BusinessPlanForm from '@/components/loan-application/business-plan-form';
 import CollateralForm from '@/components/loan-application/collateral-form';
 import GuarantorForm from '@/components/loan-application/guarantor-form';
 import DeclarationForm from '@/components/loan-application/declaration-form';
+import { createLoanApplication } from '@/lib/appwrite';
 
 
 export default function LoanApplicationPage() {
   const router = useRouter();
+  const { user, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState("personal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,13 +70,17 @@ export default function LoanApplicationPage() {
     agreeToTerms: false
   });
   
-  // Load form data from localStorage on component mount
+  // Update the useEffect to prioritize profile data over localStorage data
   useEffect(() => {
+    // First, check if we have saved form data in localStorage
     const savedData = localStorage.getItem('loanApplicationData');
+    let initialFormData = { ...formData };
+    
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
-        setFormData(parsedData);
+        console.log("Saved form data from localStorage:", parsedData);
+        initialFormData = { ...initialFormData, ...parsedData };
         
         // If there's saved data, check if we can resume from a specific tab
         const savedTab = localStorage.getItem('loanApplicationActiveTab');
@@ -84,7 +91,36 @@ export default function LoanApplicationPage() {
         console.error('Error parsing saved form data:', e);
       }
     }
-  }, []);
+    
+    // Then, if we have user profile data, it should override localStorage data
+    if (userProfile) {
+      console.log("User profile data available:", userProfile);
+      
+      // Update form data with all available profile fields
+      initialFormData = {
+        ...initialFormData,
+        fullName: userProfile.name || user?.name || initialFormData.fullName,
+        email: userProfile.email || user?.email || initialFormData.email,
+        phone: userProfile.phone || initialFormData.phone,
+        farmerId: userProfile.$id || initialFormData.farmerId,
+        address: userProfile.address || initialFormData.address,
+        state: userProfile.state || initialFormData.state,
+        lga: userProfile.lga || initialFormData.lga,
+        farmSize: userProfile.farmSize?.toString() || initialFormData.farmSize,
+        hasIrrigation: userProfile.hasIrrigation || initialFormData.hasIrrigation,
+      };
+      
+      console.log("Final form data with profile overrides:", initialFormData);
+    } else {
+      console.log("No user profile data available");
+    }
+    
+    // Set the form data with all the merged information
+    setFormData(initialFormData);
+    
+    // Clear localStorage to prevent it from overriding profile data in the future
+    localStorage.removeItem('loanApplicationData');
+  }, [userProfile, user]);
   
   // Save form data to localStorage whenever it changes
   useEffect(() => {
@@ -119,110 +155,7 @@ export default function LoanApplicationPage() {
     }
   };
   
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setError(null);
-    
-    try {
-      // Calculate risk score based on farm details and loan amount
-      const farmSize = parseFloat(formData.farmSize);
-      const loanAmount = parseFloat(formData.amount);
-      const hasIrrigation = formData.hasIrrigation;
-      const hasCollateral = formData.hasCollateral;
-      
-      // Simple risk calculation (would be more sophisticated in production)
-      let riskScore = 50; // Base score
-      
-      // Adjust based on farm size to loan amount ratio
-      const amountPerHectare = loanAmount / farmSize;
-      if (amountPerHectare < 50000) riskScore += 10;
-      else if (amountPerHectare > 200000) riskScore -= 10;
-      
-      // Adjust for irrigation (reduces risk)
-      if (hasIrrigation) riskScore += 15;
-      
-      // Adjust for collateral (reduces risk)
-      if (hasCollateral) riskScore += 20;
-      
-      // Cap the score between 0-100
-      riskScore = Math.max(0, Math.min(100, riskScore));
-      
-      // For now, instead of creating in Appwrite, store in localStorage
-      const applicationId = `LOAN-${Date.now()}`;
-      const loanApplication = {
-        $id: applicationId,
-        farmerId: formData.farmerId,
-        amount: parseFloat(formData.amount),
-        cropType: formData.cropType,
-        farmSize: parseFloat(formData.farmSize),
-        purpose: formData.purpose,
-        applicationDate: new Date().toISOString(),
-        status: 'pending',
-        riskScore: riskScore,
-        riskExplanation: generateRiskExplanation(riskScore, formData),
-        hasIrrigation: formData.hasIrrigation,
-        expectedHarvestDate: formData.expectedHarvestDate,
-        estimatedYield: formData.estimatedYield,
-        estimatedRevenue: formData.estimatedRevenue,
-        marketStrategy: formData.marketStrategy,
-        hasCollateral: formData.hasCollateral,
-        collateralType: formData.hasCollateral ? formData.collateralType : null,
-        collateralValue: formData.hasCollateral ? parseFloat(formData.collateralValue) : null,
-        guarantorName: formData.guarantorName,
-        guarantorPhone: formData.guarantorPhone,
-        guarantorRelationship: formData.guarantorRelationship,
-        hasInsurance: formData.hasInsurance,
-        hasPreviousLoan: formData.hasPreviousLoan,
-        // Include all form data for completeness
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        state: formData.state,
-        lga: formData.lga,
-        loanType: formData.loanType,
-        repaymentPeriod: formData.repaymentPeriod,
-        farmingType: formData.farmingType,
-        livestockType: formData.livestockType,
-        farmLocation: formData.farmLocation,
-        guarantorAddress: formData.guarantorAddress
-      };
-      
-      // Store in localStorage
-      const existingApplications = JSON.parse(localStorage.getItem('loanApplications') || '[]');
-      existingApplications.push(loanApplication);
-      localStorage.setItem('loanApplications', JSON.stringify(existingApplications));
-      
-      // Store current application for easy access
-      localStorage.setItem('currentLoanApplication', JSON.stringify(loanApplication));
-      
-      // Clear the form data and active tab from localStorage
-      localStorage.removeItem('loanApplicationData');
-      localStorage.removeItem('loanApplicationActiveTab');
-      
-      // Simulate email sending (just log it for now)
-      console.log('Email would be sent to:', formData.email, {
-        subject: 'Loan Application Received',
-        html: `
-          <h1>Your loan application has been received</h1>
-          <p>Dear ${formData.fullName},</p>
-          <p>We have received your loan application for ₦${formData.amount} for ${formData.cropType} farming.</p>
-          <p>Your application ID is: ${applicationId}</p>
-          <p>We will review your application and get back to you shortly.</p>
-          <p>Thank you for choosing AgriGrow Finance.</p>
-        `
-      });
-      
-      router.push(`/apply/success?id=${applicationId}`);
-    } catch (error) {
-      console.error('Error submitting loan application:', error);
-      setError('Failed to submit your application. Please try again later.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  // Generate risk explanation based on score and form data
+  // Move the generateRiskExplanation function above the handleSubmit function
   const generateRiskExplanation = (score: number, data: Record<string, unknown>) => {
     let explanation = '';
     
@@ -248,6 +181,130 @@ export default function LoanApplicationPage() {
     }
     
     return explanation;
+  };
+  
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Validation
+      if (!formData.purpose || !formData.amount || !formData.cropType) {
+        setError("Please fill in all required fields");
+        return;
+      }
+
+      if (!formData.agreeToTerms) {
+        setError("You must agree to the terms and conditions");
+        return;
+      }
+
+      // Calculate risk score (0-100 scale)
+      const calculateRiskScore = () => {
+        // Parse values
+        const loanAmount = parseFloat(formData.amount) || 0;
+        const farmSize = parseFloat(formData.farmSize) || 1; // Default to 1 to avoid division by zero
+        const estimatedRevenue = parseFloat(formData.estimatedRevenue) || 0;
+        
+        // Base risk factors
+        let score = 50; // Start at moderate risk (50%)
+        
+        // Loan-to-farm-size ratio (higher ratio = higher risk)
+        // Assuming ₦200,000 per hectare is a reasonable amount
+        const loanPerHectare = loanAmount / farmSize;
+        if (loanPerHectare > 300000) score += 20;
+        else if (loanPerHectare > 200000) score += 10;
+        else if (loanPerHectare < 100000) score -= 10;
+        
+        // Loan-to-revenue ratio (higher ratio = higher risk)
+        // Loan should ideally be less than 50% of expected revenue
+        const loanToRevenueRatio = loanAmount / (estimatedRevenue || 1);
+        if (loanToRevenueRatio > 0.7) score += 15;
+        else if (loanToRevenueRatio > 0.5) score += 5;
+        else if (loanToRevenueRatio < 0.3) score -= 10;
+        
+        // Irrigation reduces risk for water-dependent crops
+        if (formData.hasIrrigation) {
+          score -= 10;
+        } else if (['rice', 'tomato'].includes(formData.cropType)) {
+          score += 15; // Higher risk for water-dependent crops without irrigation
+        }
+        
+        // Collateral reduces risk
+        if (formData.hasCollateral) {
+          score -= 15;
+        }
+        
+        // Insurance reduces risk
+        if (formData.hasInsurance) {
+          score -= 10;
+        }
+        
+        // Previous loans might indicate higher risk
+        if (formData.hasPreviousLoan) {
+          score += 5;
+        }
+        
+        // Ensure score is between 0-100
+        return Math.min(Math.max(Math.round(score), 0), 100);
+      };
+
+      const riskScore = calculateRiskScore();
+      
+      // Generate risk explanation based on the calculated score
+      const riskExplanation = generateRiskExplanation(riskScore, formData);
+      console.log("Risk explanation:", riskExplanation); // Add this for debugging
+      console.log("Risk score:", riskScore);
+      console.log("Form data used for explanation:", {
+        hasIrrigation: formData.hasIrrigation,
+        hasCollateral: formData.hasCollateral,
+        hasPreviousLoan: formData.hasPreviousLoan,
+        hasInsurance: formData.hasInsurance
+      });
+
+      // Create loan application in Appwrite - match the schema exactly
+      const loanApplication = {
+        farmerId: userProfile.$id,
+        userId: userProfile.userId,
+        fullName: userProfile.name || formData.fullName,
+        amount: parseFloat(formData.amount),
+        cropType: formData.cropType,
+        farmSize: parseFloat(formData.farmSize),
+        riskScore: riskScore,
+        riskExplanation: riskExplanation, // Make sure this is included
+        email: formData.email || userProfile.email,
+        phone: formData.phone || userProfile.phone,
+        address: formData.address || userProfile.address,
+        lga: formData.lga || userProfile.lga,
+        state: formData.state || userProfile.state,
+        purpose: formData.purpose,
+        farmingType: formData.farmingType,
+        farmLocation: formData.farmLocation,
+        hasIrrigation: formData.hasIrrigation,
+        expectedHarvestDate: formData.expectedHarvestDate,
+        estimatedYield: parseFloat(formData.estimatedYield) || 0,
+        estimatedRevenue: parseFloat(formData.estimatedRevenue) || 0,
+        marketStrategy: formData.marketStrategy,
+        status: "pending",
+        applicationDate: new Date().toISOString(),
+      };
+
+      console.log("Creating loan application with risk explanation:", loanApplication);
+      const createdLoan = await createLoanApplication(loanApplication);
+      console.log("Loan application created successfully:", createdLoan);
+
+      // Clear saved form data after successful submission
+      localStorage.removeItem("loanApplicationData");
+      localStorage.removeItem("loanApplicationActiveTab");
+
+      router.push("/dashboard?tab=applications");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit application';
+      console.error('Error submitting application:', errorMessage);
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (

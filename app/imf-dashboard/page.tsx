@@ -7,34 +7,34 @@ import CropCalendarTab from '@/components/mfi-dashboard/crop-calendar-tab';
 import SettingsTab from '@/components/mfi-dashboard/settings-tab';
 import AnalyticsTab from '@/components/mfi-dashboard/analytics-tab';
 import { LoanApplication } from '@/types/loan';
+import { useAuth } from '@/contexts/auth-context';
+import { getAllLoanApplications } from '@/lib/appwrite';
 
-export default function MFIDashboardPage() {
+export default function IMFDashboardPage() {
   const [activeTab, setActiveTab] = useState("applications");
-  const [applications, setApplications] = useState<LoanApplication[]>([]);
+  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { userProfile } = useAuth();
 
   useEffect(() => {
-    // Load applications from localStorage
-    const loadApplications = () => {
+    const loadData = async () => {
       try {
-        const savedApplications = localStorage.getItem('loanApplications');
-        if (savedApplications) {
-          const parsedApplications = JSON.parse(savedApplications);
-          setApplications(parsedApplications);
+        if (userProfile) {
+          // Load all loan applications from Appwrite
+          const applications = await getAllLoanApplications();
+          setLoanApplications(applications as unknown as LoanApplication[]);
         }
         setIsLoading(false);
-      } catch (error) {
-        console.error('Error loading applications:', error);
+      } catch {
         setIsLoading(false);
       }
     };
-    
-    loadApplications();
-  }, []);
+
+    loadData();
+  }, [userProfile]);
 
   const handleApplicationUpdate = (updatedApplications: LoanApplication[]) => {
-    setApplications(updatedApplications);
-    localStorage.setItem('loanApplications', JSON.stringify(updatedApplications));
+    setLoanApplications(updatedApplications);
   };
 
   if (isLoading) {
@@ -67,13 +67,13 @@ export default function MFIDashboardPage() {
         
         <TabsContent value="applications">
           <ApplicationsTab 
-            applications={applications} 
+            applications={loanApplications} 
             onApplicationsUpdate={handleApplicationUpdate} 
           />
         </TabsContent>
         
         <TabsContent value="analytics">
-          <AnalyticsTab applications={applications} />
+          <AnalyticsTab applications={loanApplications} />
         </TabsContent>
         
         <TabsContent value="crop-calendar">

@@ -43,14 +43,14 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       // Redirect based on user type (would be determined by Appwrite user data)
-      const userType = formData.email.includes("mfi") ? "mfi" : "farmer";
+      const userType = formData.email.includes("imf") ? "imf" : "farmer";
       
       onSuccess();
       
-      if (userType === "mfi") {
-        router.push("/dashboard");
+      if (userType === "imf") {
+        router.push("/imf-dashboard");
       } else {
-        router.push("/farmer-dashboard");
+        router.push("/dashboard");
       }
     } catch  {
       setError("Invalid email or password. Please try again.");

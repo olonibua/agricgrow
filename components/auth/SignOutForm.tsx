@@ -21,7 +21,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
     phone: "",
     password: "",
     confirmPassword: "",
-    userType: "farmer", // "farmer" or "mfi"
+    userType: "farmer", // "farmer" or "imf"
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,8 +77,8 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
           <Label htmlFor="farmer">Farmer</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="mfi" id="mfi" />
-          <Label htmlFor="mfi">MFI</Label>
+          <RadioGroupItem value="imf" id="imf" />
+          <Label htmlFor="imf">IMF</Label>
         </div>
       </RadioGroup>
       

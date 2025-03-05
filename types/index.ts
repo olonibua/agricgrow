@@ -136,7 +136,7 @@ export interface Loan {
   status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted';
   riskScore: number; // 0-100, calculated by AI
   riskExplanation?: string;
-  approvedBy?: string; // MFI admin ID
+  approvedBy?: string; // IMF Partner admin ID
   approvalDate?: Date;
   repaymentSchedule?: RepaymentSchedule[];
 }
@@ -153,8 +153,8 @@ export interface Repayment {
   transactionReference?: string;
 }
 
-// MFI types
-export interface MFI {
+// IMF Partner types
+export interface IMF {
   id: string;
   name: string;
   email: string;
