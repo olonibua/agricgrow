@@ -10,6 +10,9 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
+// Export ID for convenience
+export { ID };
+
 // Database and collection IDs
 export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '';
 export const FARMERS_COLLECTION_ID = process.env.NEXT_PUBLIC_FARMERS_COLLECTION_ID || '';
