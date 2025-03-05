@@ -1,10 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { account, createAccount, FARMERS_COLLECTION_ID, DATABASE_ID, getCurrentUser, getUserProfile } from '@/lib/appwrite';
+import { account, FARMERS_COLLECTION_ID, DATABASE_ID, getCurrentUser, getUserProfile, IMF_COLLECTION_ID } from '@/lib/appwrite';
 import { useRouter } from 'next/navigation';
 import { databases } from '@/lib/appwrite';
-import { Query } from 'appwrite';
+import { ID } from 'appwrite';
 
 async function withRetry<T>(operation: () => Promise<T>, maxRetries = 3, delay = 1000): Promise<T> {
   let lastError;
@@ -199,35 +199,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Create the account in Appwrite Auth
-      const newAccount = await createAccount(email, password, name, 'farmer');
+      // Create the account in Appwrite Auth - fix argument count
+      const newAccount = await account.create(
+        ID.unique(),
+        email,
+        password,
+        name
+      );
       
-      // Update the farmer profile with additional data if provided
-      if (additionalData && newAccount.$id) {
-        // Find the farmer document by userId
-        const response = await databases.listDocuments(
-          DATABASE_ID,
-          FARMERS_COLLECTION_ID,
-          [Query.equal('userId', newAccount.$id)]
-        );
-        
-        if (response.documents.length > 0) {
-          const farmerDoc = response.documents[0];
-          
-          // Update the document with additional data
-          await databases.updateDocument(
-            DATABASE_ID,
-            FARMERS_COLLECTION_ID,
-            farmerDoc.$id,
-            {
-              phone: additionalData.phone || null,
-              address: additionalData.address || null,
-              state: additionalData.state || null,
-              lga: additionalData.lga || null
-            }
-          );
+      // Then create the farmer profile document
+      await databases.createDocument(
+        DATABASE_ID,
+        FARMERS_COLLECTION_ID,
+        ID.unique(),
+        {
+          userId: newAccount.$id,
+          name,
+          email,
+          phone: additionalData?.phone || null,
+          address: additionalData?.address || null,
+          state: additionalData?.state || null,
+          lga: additionalData?.lga || null,
+          registrationDate: new Date().toISOString(),
+          status: 'active',
+          farmSize: 0,
+          primaryCrop: '',
+          secondaryCrop: '',
+          hasIrrigation: false,
+          creditScore: 65
         }
-      }
+      );
       
       // Login after registration
       await login(email, password);
@@ -257,7 +258,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) => {
     try {
       setIsLoading(true);
-      await createAccount(email, password, name, 'imf', additionalData);
+      // Fix argument count - Appwrite account.create only accepts 4 arguments
+      const newAccount = await account.create(
+        ID.unique(),
+        email,
+        password,
+        name
+      );
+      
+      // Create IMF profile document
+      await databases.createDocument(
+        DATABASE_ID,
+        IMF_COLLECTION_ID,
+        ID.unique(),
+        {
+          userId: newAccount.$id,
+          name,
+          email,
+          phone: additionalData?.phone || null,
+          address: additionalData?.address || null,
+          state: additionalData?.state || null,
+          registrationNumber: additionalData?.registrationNumber || null,
+          contactPersonName: additionalData?.contactPersonName || null,
+          contactPersonEmail: additionalData?.contactPersonEmail || null,
+          contactPersonPhone: additionalData?.contactPersonPhone || null,
+          registrationDate: new Date().toISOString(),
+          status: 'pending' // IMF Partners need approval
+        }
+      );
+      
       await login(email, password);
     } catch (error: unknown) {
       console.error('IMF registration error:', error);
@@ -289,4 +318,76 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+export async function createAccount(
+  email: string, 
+  password: string, 
+  name: string, 
+  userType: 'farmer' | 'imf',
+  additionalData?: {
+    phone?: string;
+    address?: string;
+    state?: string;
+    lga?: string;
+  }
+) {
+  try {
+    // Create the account with retry logic
+    const newAccount = await withRetry(() => 
+      account.create(
+        ID.unique(),
+        email,
+        password,
+        name
+      )
+    );
+    
+    // Store additional user data based on type
+    if (userType === 'farmer') {
+      await withRetry(() => 
+        databases.createDocument(
+          DATABASE_ID,
+          FARMERS_COLLECTION_ID,
+          ID.unique(),
+          {
+            userId: newAccount.$id,
+            name,
+            email,
+            phone: additionalData?.phone || null,
+            address: additionalData?.address || null,
+            state: additionalData?.state || null,
+            lga: additionalData?.lga || null,
+            registrationDate: new Date().toISOString(),
+            status: 'active',
+            farmSize: 0,
+            primaryCrop: '',
+            secondaryCrop: '',
+            hasIrrigation: false,
+            creditScore: 65
+          }
+        )
+      );
+    } else {
+      await withRetry(() => 
+        databases.createDocument(
+          DATABASE_ID,
+          IMF_COLLECTION_ID,
+          ID.unique(),
+          {
+            userId: newAccount.$id,
+            name,
+            email,
+            registrationDate: new Date().toISOString(),
+            status: 'pending' // IMF Partners need approval
+          }
+        )
+      );
+    }
+    
+    return newAccount;
+  } catch (error) {
+    console.error('Error creating account:', error);
+    throw error;
+  }
 } 
