@@ -1,22 +1,22 @@
-// 'use client';
+'use client';
 
-// import { useState, useEffect } from 'react';
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { Card, CardContent } from "@/components/ui/card";
+import { useState} from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 // import { getAllLoanApplications } from '@/lib/appwrite';
-// import { LoanApplication } from '@/types/loan';
-// import { useAuth } from '@/contexts/auth-context';
+import { LoanApplication } from '@/types/loan';
+import { useAuth } from '@/contexts/auth-context';
 // import ApplicationsTab from '@/components/imf-dashboard/applications-tab';
-// import { useSearchParams } from 'next/navigation';
-// import ApplicationDetails from '@/components/imf-dashboard/application-details';
+import { useSearchParams } from 'next/navigation';
+import ApplicationDetails from '@/components/imf-dashboard/application-details';
 
-// export default function ApplicationsPage() {
-//   const [activeTab, setActiveTab] = useState("pending");
-//   const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
+export default function ApplicationsPage() {
+  const [activeTab, setActiveTab] = useState("pending");
+  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
 //   const [isLoading, setIsLoading] = useState(true);
-//   const [selectedApplication, setSelectedApplication] = useState<LoanApplication | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<LoanApplication | null>(null);
 //   const { userProfile } = useAuth();
-//   const searchParams = useSearchParams();
+  const searchParams = useSearchParams();
 //   const applicationId = searchParams.get('id');
 
 //   useEffect(() => {
@@ -53,111 +53,98 @@
 //     setSelectedApplication(application);
 //   };
 
-//   const handleCloseDetails = () => {
-//     setSelectedApplication(null);
-//     // Remove the id from the URL
-//     const url = new URL(window.location.href);
-//     url.searchParams.delete('id');
-//     window.history.pushState({}, '', url);
-//   };
+  const handleCloseDetails = () => {
+    setSelectedApplication(null);
+    // Remove the id from the URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('id');
+    window.history.pushState({}, '', url);
+  };
 
-//   const handleApproveApplication = (application: LoanApplication) => {
-//     // Implementation for approving application
-//     console.log("Approving application:", application.$id);
-//     handleCloseDetails();
-//   };
+  const handleApproveApplication = (application: LoanApplication) => {
+    // Implementation for approving application
+    console.log("Approving application:", application.$id);
+    handleCloseDetails();
+  };
 
-//   const handleRejectApplication = (application: LoanApplication) => {
-//     // Implementation for rejecting application
-//     console.log("Rejecting application:", application.$id);
-//     handleCloseDetails();
-//   };
+  const handleRejectApplication = (application: LoanApplication) => {
+    // Implementation for rejecting application
+    console.log("Rejecting application:", application.$id);
+    handleCloseDetails();
+  };
 
-//   if (isLoading) {
-//     return (
-//       <div className="flex h-screen">
-//         <div className="flex-1 flex items-center justify-center">
-//           <div className="text-center">
-//             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-//             <p className="mt-4 text-lg">Loading applications...</p>
-//           </div>
-//         </div>
-//       </div>
-//     );
-//   }
+  // Filter applications by status
+  const pendingApplications = loanApplications.filter(app => app.status === 'pending');
+  const approvedApplications = loanApplications.filter(app => app.status === 'approved');
+  const rejectedApplications = loanApplications.filter(app => app.status === 'rejected');
 
-//   // Filter applications by status
-//   const pendingApplications = loanApplications.filter(app => app.status === 'pending');
-//   const approvedApplications = loanApplications.filter(app => app.status === 'approved');
-//   const rejectedApplications = loanApplications.filter(app => app.status === 'rejected');
-
-//   return (
-//     <div className="flex h-screen ">
-//       <div className="flex-1 p-8 overflow-auto">
-//         <div className="max-w-7xl mx-auto">
-//           <h1 className="text-3xl font-bold mb-2">Loan Applications</h1>
-//           <p className="text-muted-foreground mb-8">Review and manage farmer loan applications</p>
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="py-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold mb-2">Loan Applications</h1>
+          <p className="text-muted-foreground mb-8">Review and manage farmer loan applications</p>
           
-//           {selectedApplication ? (
-//             <ApplicationDetails 
-//               application={selectedApplication as any}
-//               onApprove={(app) => handleApproveApplication(app as any)}
-//               onReject={(app) => handleRejectApplication(app as any)}
-//               onClose={handleCloseDetails}
-//             />
-//           ) : (
-//             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-//               <TabsList className="grid grid-cols-3 w-full max-w-md">
-//                 <TabsTrigger value="pending">
-//                   Pending ({pendingApplications.length})
-//                 </TabsTrigger>
-//                 <TabsTrigger value="approved">
-//                   Approved ({approvedApplications.length})
-//                 </TabsTrigger>
-//                 <TabsTrigger value="rejected">
-//                   Rejected ({rejectedApplications.length})
-//                 </TabsTrigger>
-//               </TabsList>
+          {selectedApplication ? (
+            <ApplicationDetails 
+              application={selectedApplication as any}
+              onApprove={(app) => handleApproveApplication(app as any)}
+              onReject={(app) => handleRejectApplication(app as any)}
+              onClose={handleCloseDetails}
+            />
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList className="grid grid-cols-3 w-full max-w-md">
+                <TabsTrigger value="pending">
+                  Pending ({pendingApplications.length})
+                </TabsTrigger>
+                <TabsTrigger value="approved">
+                  Approved ({approvedApplications.length})
+                </TabsTrigger>
+                <TabsTrigger value="rejected">
+                  Rejected ({rejectedApplications.length})
+                </TabsTrigger>
+              </TabsList>
               
-//               <TabsContent value="pending">
-//                 <Card>
-//                   <CardContent className="pt-6">
-//                     <ApplicationsTab 
-//                       applications={pendingApplications}
-//                       onApplicationsUpdate={handleApplicationUpdate}
-//                       onSelectApplication={handleSelectApplication}
-//                     />
-//                   </CardContent>
-//                 </Card>
-//               </TabsContent>
+              <TabsContent value="pending">
+                <Card>
+                  <CardContent className="pt-6">
+                    {/* <ApplicationsTab 
+                      applications={pendingApplications}
+                      onApplicationsUpdate={handleApplicationUpdate}
+                      onSelectApplication={handleSelectApplication}
+                    /> */}
+                  </CardContent>
+                </Card>
+              </TabsContent>
               
-//               <TabsContent value="approved">
-//                 <Card>
-//                   <CardContent className="pt-6">
-//                     <ApplicationsTab 
-//                       applications={approvedApplications}
-//                       onApplicationsUpdate={handleApplicationUpdate}
-//                       onSelectApplication={handleSelectApplication}
-//                     />
-//                   </CardContent>
-//                 </Card>
-//               </TabsContent>
+              <TabsContent value="approved">
+                <Card>
+                  <CardContent className="pt-6">
+                    {/* <ApplicationsTab 
+                      applications={approvedApplications}
+                      onApplicationsUpdate={handleApplicationUpdate}
+                      onSelectApplication={handleSelectApplication}
+                    /> */}
+                  </CardContent>
+                </Card>
+              </TabsContent>
               
-//               <TabsContent value="rejected">
-//                 <Card>
-//                   <CardContent className="pt-6">
-//                     <ApplicationsTab 
-//                       applications={rejectedApplications}
-//                       onApplicationsUpdate={handleApplicationUpdate}
-//                       onSelectApplication={handleSelectApplication}
-//                     />
-//                   </CardContent>
-//                 </Card>
-//               </TabsContent>
-//             </Tabs>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// } 
+              <TabsContent value="rejected">
+                <Card>
+                  <CardContent className="pt-6">
+                    {/* <ApplicationsTab 
+                      applications={rejectedApplications}
+                      onApplicationsUpdate={handleApplicationUpdate}
+                      onSelectApplication={handleSelectApplication}
+                    /> */}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+} 
