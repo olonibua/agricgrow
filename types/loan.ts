@@ -6,12 +6,12 @@ export interface BaseApplication {
 }
 
 export interface LoanApplication extends BaseApplication {
-  farmerId: string;
-  fullName: string;
+  farmerId?: string;
+  fullName?: string;
   amount: number;
-  cropType: string;
-  farmSize: number;
-  purpose: string;
+  cropType?: string;
+  farmSize?: number;
+  purpose?: string;
   riskScore: number;
   riskExplanation?: string;
   phone: string;
@@ -33,6 +33,9 @@ export interface LoanApplication extends BaseApplication {
   disbursementDate?: string;
   repaymentDate?: string;
   interestRate?: number;
+  hasCollateral: boolean;
+  hasPreviousLoan: boolean;
+  updatedAt?: string;
   [key: string]: string | number | boolean | undefined | Date;
 }
 

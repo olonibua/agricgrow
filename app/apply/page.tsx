@@ -156,7 +156,7 @@ export default function LoanApplicationPage() {
   };
   
   // Update the risk explanation generation to match the risk score
-  const generateRiskExplanation = (riskScore: number, formData: any) => {
+  const generateRiskExplanation = (riskScore: number, formData: Record<string, unknown>) => {
     // Normalize the score to ensure consistency
     const normalizedScore = riskScore;
     let riskLevel;
@@ -192,7 +192,7 @@ export default function LoanApplicationPage() {
       riskFactors.push("Existing loan obligations may affect repayment capacity");
     }
     
-    if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType)) {
+    if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType as string)) {
       riskFactors.push(`${formData.cropType} cultivation without irrigation poses crop failure risk`);
     }
     
@@ -249,7 +249,7 @@ export default function LoanApplicationPage() {
         // Irrigation reduces risk for water-dependent crops
         if (formData.hasIrrigation) {
           score -= 10;
-        } else if (['rice', 'tomato'].includes(formData.cropType)) {
+        } else if (['rice', 'tomato'].includes(formData.cropType as string)) {
           score += 15; // Higher risk for water-dependent crops without irrigation
         }
         

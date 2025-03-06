@@ -311,7 +311,7 @@ export async function getLoanApplication(id: string) {
 }
 
 // Add a function to update a loan application's risk explanation
-export async function updateLoanRiskExplanation(loanId: string, riskScore: number, formData: any) {
+export async function updateLoanRiskExplanation(loanId: string, riskScore: number, formData: Record<string, unknown>) {
   try {
     // Generate a new risk explanation that matches the risk score
     const riskExplanation = generateRiskExplanation(riskScore, formData);
@@ -333,7 +333,7 @@ export async function updateLoanRiskExplanation(loanId: string, riskScore: numbe
 }
 
 // Helper function to generate risk explanation based on risk score
-export function generateRiskExplanation(riskScore: number, formData: any) {
+export function generateRiskExplanation(riskScore: number, formData: Record<string, unknown>) {
   // Normalize the score to ensure consistency
   const normalizedScore = riskScore;
   let riskLevel;
@@ -360,16 +360,17 @@ export function generateRiskExplanation(riskScore: number, formData: any) {
   // Add specific risk factors
   const riskFactors = [];
   
-  if (!formData.hasCollateral) {
+  if (formData.hasCollateral === false) {
     riskFactors.push("No collateral increases financial risk");
   }
   
-  if (formData.hasPreviousLoan) {
+  if (formData.hasPreviousLoan === true) {
     riskFactors.push("Existing loan obligations may affect repayment capacity");
   }
   
-  if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType)) {
-    riskFactors.push(`${formData.cropType} cultivation without irrigation poses crop failure risk`);
+  const cropType = formData.cropType as string;
+  if (formData.hasIrrigation === false && ['rice', 'tomato'].includes(cropType)) {
+    riskFactors.push(`${cropType} cultivation without irrigation poses crop failure risk`);
   }
   
   // Join risk factors or provide default message
