@@ -86,6 +86,7 @@ export default function ApplicationDetails({
 }: ApplicationDetailsProps) {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  //@it-ignore
   const [currentApplication, setCurrentApplication] = useState(application);
 
     useEffect(() => {

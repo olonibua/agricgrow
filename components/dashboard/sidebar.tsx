@@ -12,7 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-    Tractor
+    // Tractor
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
