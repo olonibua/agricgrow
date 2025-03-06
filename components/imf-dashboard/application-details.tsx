@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { updateLoanRiskExplanation } from "@/lib/appwrite";
+import { useEffect, useState } from "react";
 
 // Add these utility functions at the top of the file
 const normalizeRiskScore = (score: number): number => {
@@ -17,7 +19,8 @@ const normalizeRiskScore = (score: number): number => {
 
 // Get risk category based on normalized score
 const getRiskCategory = (score: number): string => {
-  const normalizedScore = normalizeRiskScore(score);
+  // Normalize the score if needed (some parts of the code use 0-100 scale)
+  const normalizedScore = typeof score === 'number' ? score : 0;
   
   if (normalizedScore <= 20) return "Very Low Risk";
   if (normalizedScore <= 40) return "Low Risk";
@@ -25,6 +28,17 @@ const getRiskCategory = (score: number): string => {
   if (normalizedScore <= 80) return "High Risk";
   return "Very High Risk";
 };
+
+const getRiskLevelPrefix = (score: number): string => {
+  const normalizedScore = typeof score === 'number' ? score : 0;
+  
+  if (normalizedScore <= 20) return "Very low";
+  if (normalizedScore <= 40) return "Low";
+  if (normalizedScore <= 60) return "Moderate";
+  if (normalizedScore <= 80) return "High";
+  return "Very high";
+};
+
 
 interface LoanApplication {
   $id: string;
@@ -53,6 +67,8 @@ interface LoanApplication {
   marketStrategy: string;
   riskScore: number;
   riskExplanation?: string;
+  hasCollateral: boolean;
+  hasPreviousLoan: boolean;
 }
 
 interface ApplicationDetailsProps {
@@ -68,6 +84,52 @@ export default function ApplicationDetails({
   onReject, 
   onClose 
 }: ApplicationDetailsProps) {
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentApplication, setCurrentApplication] = useState(application);
+
+    useEffect(() => {
+      const checkRiskExplanationConsistency = async () => {
+        if (!application.riskExplanation) return;
+
+        const expectedRiskLevel = getRiskLevelPrefix(application.riskScore);
+        const currentExplanation = application.riskExplanation.toLowerCase();
+
+        // If explanation doesn't start with the expected risk level
+        if (!currentExplanation.startsWith(expectedRiskLevel.toLowerCase())) {
+          console.log(
+            "Risk explanation inconsistent with score. Auto-refreshing..."
+          );
+          await refreshRiskAnalysis();
+        }
+      };
+
+      checkRiskExplanationConsistency();
+    }, [application]);
+
+    const refreshRiskAnalysis = async () => {
+      try {
+        setIsRefreshing(true);
+        const updatedApplication = await updateLoanRiskExplanation(
+          application.$id,
+          application.riskScore,
+          {
+            hasCollateral: application.hasCollateral,
+            hasPreviousLoan: application.hasPreviousLoan,
+            hasIrrigation: application.hasIrrigation,
+            cropType: application.cropType,
+          }
+        );
+        setCurrentApplication({
+          ...application,
+          riskExplanation: updatedApplication.riskExplanation,
+        });
+        setIsRefreshing(false);
+      } catch (error) {
+        console.error("Error updating risk explanation:", error);
+        setIsRefreshing(false);
+      }
+    };
   return (
     <Card>
       <CardHeader>
@@ -76,10 +138,15 @@ export default function ApplicationDetails({
             <CardTitle>Application Details</CardTitle>
             <CardDescription>ID: {application.$id}</CardDescription>
           </div>
-          <Badge variant={
-            application.status === 'approved' ? "default" : 
-            application.status === 'pending' ? "outline" : "destructive"
-          }>
+          <Badge
+            variant={
+              application.status === "approved"
+                ? "default"
+                : application.status === "pending"
+                ? "outline"
+                : "destructive"
+            }
+          >
             {application.status}
           </Badge>
         </div>
@@ -106,21 +173,27 @@ export default function ApplicationDetails({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Location</p>
-              <p className="font-medium">{application.address}, {application.lga}, {application.state}</p>
+              <p className="font-medium">
+                {application.address}, {application.lga}, {application.state}
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Loan Details</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Amount</p>
-              <p className="font-medium">{formatCurrency(application.amount)}</p>
+              <p className="font-medium">
+                {formatCurrency(application.amount)}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Loan Type</p>
-              <p className="font-medium">{application.loanType?.replace('_', ' ')}</p>
+              <p className="font-medium">
+                {application.loanType?.replace("_", " ")}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Purpose</p>
@@ -128,15 +201,21 @@ export default function ApplicationDetails({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Repayment Period</p>
-              <p className="font-medium">{application.repaymentPeriod?.replace('_', ' ')}</p>
+              <p className="font-medium">
+                {application.repaymentPeriod?.replace("_", " ")}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Application Date</p>
-              <p className="font-medium">{formatDate(application.applicationDate || application.createdAt)}</p>
+              <p className="font-medium">
+                {formatDate(
+                  application.applicationDate || application.createdAt
+                )}
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Farm Details</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -158,17 +237,23 @@ export default function ApplicationDetails({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Irrigation</p>
-              <p className="font-medium">{application.hasIrrigation ? 'Available' : 'Not available'}</p>
+              <p className="font-medium">
+                {application.hasIrrigation ? "Available" : "Not available"}
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Business Plan</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Expected Harvest Date</p>
-              <p className="font-medium">{formatDate(application.expectedHarvestDate)}</p>
+              <p className="text-sm text-muted-foreground">
+                Expected Harvest Date
+              </p>
+              <p className="font-medium">
+                {formatDate(application.expectedHarvestDate)}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Estimated Yield</p>
@@ -176,7 +261,9 @@ export default function ApplicationDetails({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Estimated Revenue</p>
-              <p className="font-medium">{formatCurrency(application.estimatedRevenue)}</p>
+              <p className="font-medium">
+                {formatCurrency(application.estimatedRevenue)}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Market Strategy</p>
@@ -184,7 +271,7 @@ export default function ApplicationDetails({
             </div>
           </div>
         </div>
-        
+
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2">Risk Assessment</h3>
           <div className="grid grid-cols-2 gap-2">
@@ -193,9 +280,9 @@ export default function ApplicationDetails({
               <p className="text-2xl font-bold">
                 {normalizeRiskScore(application.riskScore)}%
               </p>
-              <Progress 
-                value={normalizeRiskScore(application.riskScore)} 
-                className="h-2 mt-2" 
+              <Progress
+                value={normalizeRiskScore(application.riskScore)}
+                className="h-2 mt-2"
               />
               <p className="text-sm text-muted-foreground mt-1">
                 {getRiskCategory(application.riskScore)}
@@ -206,14 +293,27 @@ export default function ApplicationDetails({
               {application.riskExplanation ? (
                 <p className="text-sm">{application.riskExplanation}</p>
               ) : (
-                <p className="text-sm text-muted-foreground">No risk explanation available</p>
+                <p className="text-sm text-muted-foreground">
+                  No risk explanation available
+                </p>
               )}
             </div>
           </div>
         </div>
+
+        <div className="flex justify-end mt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshRiskAnalysis}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? "Refreshing..." : "Refresh Risk Analysis"}
+          </Button>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-4">
-        {application.status === 'pending' && (
+        {application.status === "pending" && (
           <>
             <Button variant="default" onClick={() => onApprove(application)}>
               Approve Application

@@ -27,30 +27,25 @@ export function DashboardSidebar() {
       icon: <LayoutDashboard className="h-5 w-5" />
     },
     {
-      label: "Apply for Loan",
-      href: "/apply",
-      icon: <FileText className="h-5 w-5" />
-    },
-    {
       label: "My Loans",
       href: "/dashboard/loans",
       icon: <FileText className="h-5 w-5" />
     },
-    {
-      label: "Farm Profile",
-      href: "/dashboard/profile",
-      icon: <Tractor className="h-5 w-5" />
-    },
-    {
-      label: "Analytics",
-      href: "/dashboard/analytics",
-      icon: <BarChart3 className="h-5 w-5" />
-    },
-    {
-      label: "Calendar",
-      href: "/dashboard/calendar",
-      icon: <Calendar className="h-5 w-5" />
-    },
+    // {
+    //   label: "Farm Profile",
+    //   href: "/dashboard/profile",
+    //   icon: <Tractor className="h-5 w-5" />
+    // },
+    // {
+    //   label: "Analytics",
+    //   href: "/dashboard/analytics",
+    //   icon: <BarChart3 className="h-5 w-5" />
+    // },
+    // {
+    //   label: "Calendar",
+    //   href: "/dashboard/calendar",
+    //   icon: <Calendar className="h-5 w-5" />
+    // },
     {
       label: "Settings",
       href: "/dashboard/settings",

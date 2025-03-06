@@ -309,3 +309,75 @@ export async function getLoanApplication(id: string) {
     throw error;
   }
 }
+
+// Add a function to update a loan application's risk explanation
+export async function updateLoanRiskExplanation(loanId: string, riskScore: number, formData: any) {
+  try {
+    // Generate a new risk explanation that matches the risk score
+    const riskExplanation = generateRiskExplanation(riskScore, formData);
+    
+    // Update the loan application in the database
+    const updatedLoan = await databases.updateDocument(
+      DATABASE_ID,
+      LOAN_APPLICATIONS_COLLECTION_ID,
+      loanId,
+      { riskExplanation }
+    );
+    
+    return updatedLoan;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error updating loan risk explanation';
+    console.error('Error updating loan risk explanation:', errorMessage);
+    throw error;
+  }
+}
+
+// Helper function to generate risk explanation based on risk score
+export function generateRiskExplanation(riskScore: number, formData: any) {
+  // Normalize the score to ensure consistency
+  const normalizedScore = riskScore;
+  let riskLevel;
+  
+  if (normalizedScore <= 20) riskLevel = "Very low";
+  else if (normalizedScore <= 40) riskLevel = "Low";
+  else if (normalizedScore <= 60) riskLevel = "Moderate";
+  else if (normalizedScore <= 80) riskLevel = "High";
+  else riskLevel = "Very high";
+  
+  let explanation = `${riskLevel} risk. `;
+  
+  // Add specific risk factors based on the score and form data
+  if (normalizedScore > 60) {
+    explanation += "The loan amount is high relative to farm size, and there are significant concerns about repayment capacity. ";
+  } else if (normalizedScore > 40) {
+    explanation += "The loan has moderate risk factors that should be considered. ";
+  } else {
+    explanation += "This application shows favorable risk indicators. ";
+  }
+  
+  explanation += "Risk factors include: ";
+  
+  // Add specific risk factors
+  const riskFactors = [];
+  
+  if (!formData.hasCollateral) {
+    riskFactors.push("No collateral increases financial risk");
+  }
+  
+  if (formData.hasPreviousLoan) {
+    riskFactors.push("Existing loan obligations may affect repayment capacity");
+  }
+  
+  if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType)) {
+    riskFactors.push(`${formData.cropType} cultivation without irrigation poses crop failure risk`);
+  }
+  
+  // Join risk factors or provide default message
+  if (riskFactors.length > 0) {
+    explanation += riskFactors.join('; ') + '.';
+  } else {
+    explanation += "No significant risk factors identified.";
+  }
+  
+  return explanation;
+}

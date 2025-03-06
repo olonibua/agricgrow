@@ -27,31 +27,31 @@ export function IMFDashboardSidebar() {
       href: "/imf-dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />
     },
-    {
-      label: "Loan Applications",
-      href: "/imf-dashboard/applications",
-      icon: <FileText className="h-5 w-5" />
-    },
-    {
-      label: "Farmers",
-      href: "/imf-dashboard/farmers",
-      icon: <Users className="h-5 w-5" />
-    },
-    {
-      label: "Analytics",
-      href: "/imf-dashboard/analytics",
-      icon: <BarChart3 className="h-5 w-5" />
-    },
-    {
-      label: "Finances",
-      href: "/imf-dashboard/finances",
-      icon: <DollarSign className="h-5 w-5" />
-    },
-    {
-      label: "Institution Profile",
-      href: "/imf-dashboard/profile",
-      icon: <Building className="h-5 w-5" />
-    },
+    // {
+    //   label: "Loan Applications",
+    //   href: "/imf-dashboard/applications",
+    //   icon: <FileText className="h-5 w-5" />
+    // },
+    // {
+    //   label: "Farmers",
+    //   href: "/imf-dashboard/farmers",
+    //   icon: <Users className="h-5 w-5" />
+    // },
+    // {
+    //   label: "Analytics",
+    //   href: "/imf-dashboard/analytics",
+    //   icon: <BarChart3 className="h-5 w-5" />
+    // },
+    // {
+    //   label: "Finances",
+    //   href: "/imf-dashboard/finances",
+    //   icon: <DollarSign className="h-5 w-5" />
+    // },
+    // {
+    //   label: "Institution Profile",
+    //   href: "/imf-dashboard/profile",
+    //   icon: <Building className="h-5 w-5" />
+    // },
     {
       label: "Settings",
       href: "/imf-dashboard/settings",

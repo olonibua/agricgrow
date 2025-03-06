@@ -80,12 +80,16 @@ const CROP_SEASONS = {
   }
 };
 
-// Nigerian climate zones
+// Nigerian climate zones (expanded)
 const CLIMATE_ZONES = [
+  { id: "mangrove", name: "Mangrove Swamp (Coastal)", annualRainfall: "2000-3000mm", rainyMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11] },
   { id: "rainforest", name: "Rainforest Zone (South)", annualRainfall: "1500-2000mm", rainyMonths: [3, 4, 5, 6, 7, 8, 9, 10] },
+  { id: "freshwater", name: "Freshwater Swamp (Niger Delta)", annualRainfall: "2000-2500mm", rainyMonths: [3, 4, 5, 6, 7, 8, 9, 10] },
+  { id: "derived", name: "Derived Savanna (South-Central)", annualRainfall: "1200-1500mm", rainyMonths: [4, 5, 6, 7, 8, 9] },
   { id: "savanna", name: "Guinea Savanna (Middle Belt)", annualRainfall: "1000-1500mm", rainyMonths: [4, 5, 6, 7, 8, 9] },
   { id: "sudan", name: "Sudan Savanna (North)", annualRainfall: "600-1000mm", rainyMonths: [5, 6, 7, 8, 9] },
-  { id: "sahel", name: "Sahel Savanna (Far North)", annualRainfall: "400-600mm", rainyMonths: [6, 7, 8] }
+  { id: "sahel", name: "Sahel Savanna (Far North)", annualRainfall: "400-600mm", rainyMonths: [6, 7, 8] },
+  { id: "montane", name: "Montane (Highlands)", annualRainfall: "1500-2000mm", rainyMonths: [4, 5, 6, 7, 8, 9, 10] }
 ];
 
 export default function CropCalendarTab() {

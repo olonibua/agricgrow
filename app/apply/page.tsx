@@ -155,29 +155,52 @@ export default function LoanApplicationPage() {
     }
   };
   
-  // Move the generateRiskExplanation function above the handleSubmit function
-  const generateRiskExplanation = (score: number, data: Record<string, unknown>) => {
-    let explanation = '';
+  // Update the risk explanation generation to match the risk score
+  const generateRiskExplanation = (riskScore: number, formData: any) => {
+    // Normalize the score to ensure consistency
+    const normalizedScore = riskScore;
+    let riskLevel;
     
-    if (score >= 80) {
-      explanation = 'Low risk. The farm size is appropriate for the requested loan amount, and the presence of irrigation systems reduces crop failure risk.';
-    } else if (score >= 60) {
-      explanation = 'Moderate risk. The loan amount is reasonable for the farm size, but additional risk factors exist.';
-    } else if (score >= 40) {
-      explanation = 'Moderate to high risk. The loan amount is high relative to farm size, and there are concerns about repayment capacity.';
+    if (normalizedScore <= 20) riskLevel = "Very low";
+    else if (normalizedScore <= 40) riskLevel = "Low";
+    else if (normalizedScore <= 60) riskLevel = "Moderate";
+    else if (normalizedScore <= 80) riskLevel = "High";
+    else riskLevel = "Very high";
+    
+    let explanation = `${riskLevel} risk. `;
+    
+    // Add specific risk factors based on the score and form data
+    const riskFactors = [];
+    
+    // Add risk factors based on form data
+    if (normalizedScore > 60) {
+      explanation += "The loan amount is high relative to farm size, and there are concerns about repayment capacity. ";
+    } else if (normalizedScore > 40) {
+      explanation += "The loan has moderate risk factors that should be considered. ";
     } else {
-      explanation = 'High risk. The loan amount is very high relative to farm size, and there are significant concerns about repayment capacity.';
+      explanation += "This application shows favorable risk indicators. ";
     }
     
-    // Add specific factors
-    const factors = [];
-    if (!data.hasIrrigation) factors.push('No irrigation system increases crop failure risk during dry seasons');
-    if (!data.hasCollateral) factors.push('No collateral increases financial risk');
-    if (data.hasPreviousLoan) factors.push('Existing loan obligations may affect repayment capacity');
-    if (!data.hasInsurance) factors.push('No crop insurance increases vulnerability to weather events');
+    explanation += "Risk factors include: ";
     
-    if (factors.length > 0) {
-      explanation += ' Risk factors include: ' + factors.join('; ') + '.';
+    // Add specific risk factors
+    if (!formData.hasCollateral) {
+      riskFactors.push("No collateral increases financial risk");
+    }
+    
+    if (formData.hasPreviousLoan) {
+      riskFactors.push("Existing loan obligations may affect repayment capacity");
+    }
+    
+    if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType)) {
+      riskFactors.push(`${formData.cropType} cultivation without irrigation poses crop failure risk`);
+    }
+    
+    // Join risk factors or provide default message
+    if (riskFactors.length > 0) {
+      explanation += riskFactors.join('; ') + '.';
+    } else {
+      explanation += "No significant risk factors identified.";
     }
     
     return explanation;
