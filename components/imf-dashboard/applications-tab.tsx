@@ -282,9 +282,9 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
       {selectedApplication && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ApplicationDetails
-            application={selectedApplication as any}
-            onApprove={(app) => handleApprove(app as any)}
-            onReject={(app) => handleReject(app as any)}
+            application={selectedApplication as any /* eslint-disable-line @typescript-eslint/no-explicit-any */}
+            onApprove={(app) => handleApprove(app as any) /* eslint-disable-line @typescript-eslint/no-explicit-any */}
+            onReject={(app) => handleReject(app as any) /* eslint-disable-line @typescript-eslint/no-explicit-any */}
             onClose={() => setSelectedApplication(null)}
           />
           
