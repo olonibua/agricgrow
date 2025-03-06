@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
   FileText, 
-  BarChart3, 
-  Calendar, 
+  // BarChart3, 
+  // Calendar, 
   Settings,
   ChevronLeft,
   ChevronRight,
-  Tractor
+    Tractor
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

@@ -6,14 +6,14 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
-  FileText, 
-  Users, 
-  BarChart3, 
-  DollarSign, 
+  // FileText, 
+  // Users, 
+  // BarChart3, 
+  // DollarSign, 
   Settings,
   ChevronLeft,
   ChevronRight,
-  Building
+  // Building
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
