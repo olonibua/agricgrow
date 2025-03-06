@@ -282,9 +282,9 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
       {selectedApplication && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ApplicationDetails
-            application={selectedApplication as any}
-            onApprove={(app) => handleApprove(app as any)}
-            onReject={(app) => handleReject(app as any)}
+            application={selectedApplication as LoanApplication}
+            onApprove={(app: LoanApplication) => handleApprove(app as LoanApplication)}
+            onReject={(app: LoanApplication) => handleReject(app as LoanApplication)}
             onClose={() => setSelectedApplication(null)}
           />
           

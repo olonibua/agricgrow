@@ -70,7 +70,7 @@ export default function LoanApplicationPage() {
     agreeToTerms: false
   });
   
-  // Update the useEffect to prioritize profile data over localStorage data
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // First, check if we have saved form data in localStorage
     const savedData = localStorage.getItem('loanApplicationData');

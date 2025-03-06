@@ -90,11 +90,18 @@ export default function ApplicationDetails({
   const [currentApplication, setCurrentApplication] = useState(application);
 
     useEffect(() => {
-      const checkRiskExplanationConsistency = async () => {
-        if (!application.riskExplanation) return;
+      setCurrentApplication(application);
+    }, [application]);
 
-        const expectedRiskLevel = getRiskLevelPrefix(application.riskScore);
-        const currentExplanation = application.riskExplanation.toLowerCase();
+    useEffect(() => {
+      const checkRiskExplanationConsistency = async () => {
+        if (!currentApplication.riskExplanation) return;
+
+        const expectedRiskLevel = getRiskLevelPrefix(
+          currentApplication.riskScore
+        );
+        const currentExplanation =
+          currentApplication.riskExplanation.toLowerCase();
 
         // If explanation doesn't start with the expected risk level
         if (!currentExplanation.startsWith(expectedRiskLevel.toLowerCase())) {
@@ -106,23 +113,24 @@ export default function ApplicationDetails({
       };
 
       checkRiskExplanationConsistency();
-    }, [application]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentApplication]);
 
     const refreshRiskAnalysis = async () => {
       try {
         setIsRefreshing(true);
         const updatedApplication = await updateLoanRiskExplanation(
-          application.$id,
-          application.riskScore,
+          currentApplication.$id,
+          currentApplication.riskScore,
           {
-            hasCollateral: application.hasCollateral,
-            hasPreviousLoan: application.hasPreviousLoan,
-            hasIrrigation: application.hasIrrigation,
-            cropType: application.cropType,
+            hasCollateral: currentApplication.hasCollateral,
+            hasPreviousLoan: currentApplication.hasPreviousLoan,
+            hasIrrigation: currentApplication.hasIrrigation,
+            cropType: currentApplication.cropType,
           }
         );
         setCurrentApplication({
-          ...application,
+          ...currentApplication,
           riskExplanation: updatedApplication.riskExplanation,
         });
         setIsRefreshing(false);
@@ -141,14 +149,14 @@ export default function ApplicationDetails({
           </div>
           <Badge
             variant={
-              application.status === "approved"
+              currentApplication.status === "approved"
                 ? "default"
-                : application.status === "pending"
+                : currentApplication.status === "pending"
                 ? "outline"
                 : "destructive"
             }
           >
-            {application.status}
+            {currentApplication.status}
           </Badge>
         </div>
       </CardHeader>
