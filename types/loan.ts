@@ -32,15 +32,22 @@ export interface LoanApplication extends BaseApplication {
   rejectionDate?: string;
   disbursementDate?: string;
   repaymentDate?: string;
-  interestRate?: number;
+  interestRate: number;
   hasCollateral: boolean;
   hasPreviousLoan: boolean;
   updatedAt?: string;
-  [key: string]: string | number | boolean | undefined | Date;
+  repaymentSchedule?: RepaymentSchedule[];
+  repaymentPeriodMonths: number;
+  [key: string]: string | number | boolean | Date | undefined | RepaymentSchedule[] | null;
 }
 
 export interface RepaymentSchedule {
-  dueDate: Date;
+  id: string;
+  loanId: string;
+  dueDate: string;
   amount: number;
-  description: string;
+  status: string;
+  paymentDate?: string;
+  paymentMethod?: string;
+  transactionId?: string;
 } 

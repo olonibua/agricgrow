@@ -12,6 +12,9 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import CropViabilityAnalysis from './crop-viability-analysis';
 import ApplicationDetails from './application-details';
 import { LoanApplication } from '@/types/loan';
+import { updateLoanApplication } from '@/lib/appwrite';
+import { generateRepaymentSchedule } from '@/lib/repayment';
+import { toast } from "sonner";
 
 // Common crops in Nigeria
 const CROPS = [
@@ -60,6 +63,7 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
   const [cropFilter, setCropFilter] = useState("all");
   const [selectedApplication, setSelectedApplication] = useState<LoanApplication | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Filter applications when search term or filters change
   useEffect(() => {
@@ -113,36 +117,91 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
     setSortConfig({ key, direction });
   };
 
-  const handleApprove = (application: LoanApplication) => {
-    const updatedApplications = applications.map(app => {
-      if (app.$id === application.$id) {
-        return {
-          ...app,
-          status: 'approved' as 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted',
-          approvalDate: new Date().toISOString()
-        };
-      }
-      return app;
-    });
-    
-    onApplicationsUpdate(updatedApplications);
-    setSelectedApplication(null);
+  const handleApprove = async (application: LoanApplication) => {
+    try {
+      setIsLoading(true);
+      
+      // Use the repayment period from the application (which may have been updated in ApplicationDetails)
+      const repaymentPeriodMonths = application.repaymentPeriodMonths || 6; // Fallback to 6 if not specified
+      
+      // Generate repayment schedule
+      const repaymentSchedule = generateRepaymentSchedule(
+        application.$id,
+        application.amount,
+        application.interestRate || 10, // Use application interest rate or default to 10%
+        repaymentPeriodMonths, // Use the actual period that may have been adjusted
+        new Date()
+      );
+      
+      // Update application status and add repayment schedule
+      const updatedApplication = await updateLoanApplication(application.$id, {
+        status: 'approved',
+        approvalDate: new Date().toISOString(),
+        repaymentPeriodMonths: repaymentPeriodMonths, // Save the possibly adjusted period
+        interestRate: application.interestRate || 10, // Save the possibly adjusted interest rate
+        repaymentScheduleJson: JSON.stringify(repaymentSchedule)
+      });
+      
+      // Update the applications list
+      const updatedApplications = applications.map(app => 
+        app.$id === application.$id ? (updatedApplication as unknown as LoanApplication) : app
+      );
+      onApplicationsUpdate(updatedApplications);
+      
+      toast.success(`Loan for ${application.fullName} has been approved.`);
+      
+      setIsLoading(false);
+      setSelectedApplication(null);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to approve loan';
+      console.error("Error approving loan:", errorMessage);
+      
+      toast.error(errorMessage);
+      
+      setIsLoading(false);
+    }
   };
 
-  const handleReject = (application: LoanApplication) => {
-    const updatedApplications = applications.map(app => {
-      if (app.$id === application.$id) {
-        return {
-          ...app,
-          status: 'rejected' as 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted',
-          rejectionDate: new Date().toISOString()
-        };
-      }
-      return app;
-    });
-    
-    onApplicationsUpdate(updatedApplications);
-    setSelectedApplication(null);
+  const handleReject = async (application: LoanApplication) => {
+    try {
+      setIsLoading(true);
+      
+      // Add a reason field (could be from a modal/form in a more complete implementation)
+      const rejectionReason = "Application does not meet risk assessment criteria at this time.";
+      
+      // Update the application in the backend
+      await updateLoanApplication(application.$id, {
+        status: 'rejected',
+        rejectionDate: new Date().toISOString(),
+        rejectionReason: rejectionReason
+      });
+      
+      // Update the local state
+      const updatedApplications = applications.map(app => {
+        if (app.$id === application.$id) {
+          return {
+            ...app,
+            status: 'rejected' as 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted',
+            rejectionDate: new Date().toISOString(),
+            rejectionReason: rejectionReason
+          };
+        }
+        return app;
+      });
+      
+      onApplicationsUpdate(updatedApplications);
+      setSelectedApplication(null);
+      setIsLoading(false);
+      
+      toast.success(`Loan application for ${application.fullName} has been rejected.`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error rejecting application';
+      console.error("Error rejecting application:", errorMessage);
+      
+      toast.error(errorMessage);
+      
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -289,6 +348,17 @@ export default function ApplicationsTab({ applications, onApplicationsUpdate }: 
           />
           
           <CropViabilityAnalysis application={selectedApplication} />
+        </div>
+      )}
+      
+      {isLoading && (
+        <div className="flex justify-center my-4">
+          <div className="animate-pulse flex space-x-2 items-center">
+            <div className="h-2 w-2 bg-primary rounded-full"></div>
+            <div className="h-2 w-2 bg-primary rounded-full"></div>
+            <div className="h-2 w-2 bg-primary rounded-full"></div>
+            <span className="text-sm text-muted-foreground ml-2">Processing...</span>
+          </div>
         </div>
       )}
     </div>

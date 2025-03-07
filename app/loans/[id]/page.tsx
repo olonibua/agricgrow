@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertCircle, ArrowLeft, Calendar, Clock, DollarSign, FileText } from "lucide-react";
 import { getLoanApplication } from "@/lib/appwrite";
+import { RepaymentSchedule } from '@/types/loan';
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 // Define interfaces for type safety
 interface LoanApplication {
@@ -24,6 +26,8 @@ interface LoanApplication {
   disbursementDate?: string;
   repaymentDate?: string;
   interestRate?: number;
+  repaymentSchedule?: RepaymentSchedule[];
+  repaymentPeriodMonths: number;
 }
 
 export default function LoanDetailsPage() {
@@ -294,6 +298,57 @@ export default function LoanDetailsPage() {
           </Card>
         </div>
       </div>
+
+      {loan.status === 'approved' && loan.repaymentSchedule && (
+        <Card className="mb-4">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Repayment Schedule</CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/loans/${loan.$id}/repayments`}>
+                View Full Schedule
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {/* Calculate progress */}
+            {(() => {
+              const totalPayments = loan.repaymentSchedule.length;
+              const paidPayments = loan.repaymentSchedule.filter(p => p.status === 'paid').length;
+              const progressPercentage = Math.round((paidPayments / totalPayments) * 100);
+              
+              return (
+                <>
+                  <div className="flex justify-between mb-2">
+                    <span>{paidPayments} of {totalPayments} payments completed</span>
+                    <span>{progressPercentage}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
+                  
+                  {/* Show next payment */}
+                  {(() => {
+                    const nextPayment = loan.repaymentSchedule
+                      .filter(p => p.status === 'pending')
+                      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+                    
+                    if (nextPayment) {
+                      return (
+                        <div className="mt-4 p-3 border rounded-md bg-muted">
+                          <p className="text-sm font-medium">Next payment:</p>
+                          <div className="flex justify-between mt-1">
+                            <span className="text-sm">{formatCurrency(nextPayment.amount)}</span>
+                            <span className="text-sm">Due on {formatDate(nextPayment.dueDate)}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 } 

@@ -248,22 +248,40 @@ export async function getAllLoanApplications() {
       DATABASE_ID,
       LOANS_COLLECTION_ID
     );
-    return response.documents;
+    
+    // Parse the repayment schedule for each loan
+    return response.documents.map(doc => {
+      if (doc.repaymentScheduleJson) {
+        doc.repaymentSchedule = JSON.parse(doc.repaymentScheduleJson);
+      }
+      return doc;
+    });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error fetching all loan applications';
-    console.error('Error fetching all loan applications:', errorMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error fetching loan applications';
+    console.error('Error fetching loan applications:', errorMessage);
     return [];
   }
 }
 
-export async function updateLoanApplication(loanId: string, data: Record<string, unknown>) {
+export async function updateLoanApplication(loanId: string, data: Record<string, any>) {
   try {
-    return await databases.updateDocument(
+    // If repaymentSchedule exists in the data, stringify it
+    if (data.repaymentSchedule) {
+      // Convert the repayment schedule to a JSON string
+      data.repaymentScheduleJson = JSON.stringify(data.repaymentSchedule);
+      // Remove the original array to avoid the error
+      delete data.repaymentSchedule;
+    }
+    
+    // Update the document with the stringified data
+    const response = await databases.updateDocument(
       DATABASE_ID,
       LOANS_COLLECTION_ID,
       loanId,
       data
     );
+    
+    return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error updating loan application';
     console.error('Error updating loan application:', errorMessage);
@@ -294,18 +312,23 @@ export async function getFarmerProfile(userId: string) {
   }
 }
 
-export async function getLoanApplication(id: string) {
+export async function getLoanApplication(loanId: string) {
   try {
-    const loan = await databases.getDocument(
+    const response = await databases.getDocument(
       DATABASE_ID,
-      LOAN_APPLICATIONS_COLLECTION_ID,
-      id
+      LOANS_COLLECTION_ID,
+      loanId
     );
-    console.log("Retrieved loan from database:", loan);
-    return loan;
+    
+    // Parse the repayment schedule if it exists
+    if (response.repaymentScheduleJson) {
+      response.repaymentSchedule = JSON.parse(response.repaymentScheduleJson);
+    }
+    
+    return response;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error getting loan application';
-    console.error('Error getting loan application:', errorMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error fetching loan application';
+    console.error('Error fetching loan application:', errorMessage);
     throw error;
   }
 }
@@ -381,4 +404,35 @@ export function generateRiskExplanation(riskScore: number, formData: Record<stri
   }
   
   return explanation;
+}
+
+export async function updateLoanRepayment(loanId: string, repaymentId: string, data: Record<string, unknown>) {
+  try {
+    // First get the current loan document
+    const loan = await databases.getDocument(
+      DATABASE_ID,
+      LOANS_COLLECTION_ID,
+      loanId
+    );
+    
+    // Update the specific repayment in the repaymentSchedule array
+    const updatedRepaymentSchedule = loan.repaymentSchedule.map((repayment: any) => {
+      if (repayment.id === repaymentId) {
+        return { ...repayment, ...data };
+      }
+      return repayment;
+    });
+    
+    // Update the loan document with the new repayment schedule
+    return await databases.updateDocument(
+      DATABASE_ID,
+      LOANS_COLLECTION_ID,
+      loanId,
+      { repaymentSchedule: updatedRepaymentSchedule }
+    );
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error updating loan repayment';
+    console.error('Error updating loan repayment:', errorMessage);
+    throw error;
+  }
 }

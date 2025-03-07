@@ -9,6 +9,7 @@ import AnalyticsTab from '@/components/imf-dashboard/analytics-tab';
 import { LoanApplication } from '@/types/loan';
 import { useAuth } from '@/contexts/auth-context';
 import { getAllLoanApplications } from '@/lib/appwrite';
+import RepaymentsTab from '@/components/imf-dashboard/repayments-tab';
 
 export default function IMFDashboardPage() {
   const [activeTab, setActiveTab] = useState("applications");
@@ -60,6 +61,7 @@ export default function IMFDashboardPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid grid-cols-4 w-full max-w-2xl">
           <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="repayments">Repayments</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="crop-calendar">Crop Calendar</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -70,6 +72,10 @@ export default function IMFDashboardPage() {
             applications={loanApplications} 
             onApplicationsUpdate={handleApplicationUpdate} 
           />
+        </TabsContent>
+        
+        <TabsContent value="repayments">
+          <RepaymentsTab applications={loanApplications} />
         </TabsContent>
         
         <TabsContent value="analytics">

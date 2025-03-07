@@ -7,12 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarIcon, ArrowUpRight, Tractor, Leaf, BarChart3, FileText, AlertCircle, Droplets } from "lucide-react";
+import { CalendarIcon, ArrowUpRight, Tractor, BarChart3, FileText, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { getLoanApplications, getFarmerProfile, databases, DATABASE_ID, FARMERS_COLLECTION_ID } from '@/lib/appwrite';
 import { ID } from 'appwrite';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar as ReactCalendar } from "@/components/ui/calendar";
+import { formatCurrency} from "@/lib/utils";
+import UpcomingPayments from '@/components/dashboard/upcoming-payments';
+import RepaymentsTab from '@/components/dashboard/repayments-tab';
+import { checkOverduePayments } from '@/lib/repayment';
 
 // Define interfaces for type safety
 interface FarmerData {
@@ -41,10 +45,23 @@ interface LoanApplication {
   farmSize: number;
   riskScore: number;
   riskExplanation?: string;
+  approvalReason?: string;
+  rejectionReason?: string;
+  repaymentSchedule?: {
+    id: string;
+    loanId: string;
+    dueDate: string;
+    amount: number;
+    status: 'pending' | 'paid' | 'overdue';
+    paymentDate?: string;
+    paymentMethod?: string;
+    transactionId?: string;
+  }[];
+  interestRate: number;
+  repaymentPeriodMonths: number;
 }
 
 export default function FarmerDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
   const [farmerData, setFarmerData] = useState<FarmerData | null>(null);
   const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +74,7 @@ export default function FarmerDashboard() {
     description: string;
     type: 'planting' | 'fertilizer' | 'harvest' | 'other';
   }[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -133,20 +151,23 @@ export default function FarmerDashboard() {
                 }
               );
               console.log("Created new farmer profile:", newProfile);
-            } catch (profileError) {
-              console.error("Error creating farmer profile:", profileError);
+            } catch (profileError: unknown) {
+              const errorMessage = profileError instanceof Error ? profileError.message : 'Error creating farmer profile';
+              console.error("Error creating farmer profile:", errorMessage);
             }
           }
 
           // Load loan applications from Appwrite
           const userId = userProfile?.userId || user.$id;
           const applications = await getLoanApplications(userId);
-          setLoanApplications(applications as unknown as LoanApplication[]);
+          const updatedApplications = checkOverduePayments(applications as unknown as LoanApplication[]);
+          setLoanApplications(updatedApplications);
         }
         setIsLoading(false);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Error loading dashboard data';
         console.error("Error loading dashboard data:", errorMessage);
+        setError(errorMessage);
         setIsLoading(false);
       }
     };
@@ -235,43 +256,128 @@ export default function FarmerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg">Loading your dashboard...</p>
+      <div className="container py-10">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading your dashboard...</span>
         </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="container py-10">
+        <Card>
+          <CardContent className="py-10">
+            <div className="text-center">
+              <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-red-600 mb-2">Error Loading Dashboard</h2>
+              <p className="text-muted-foreground">{error}</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  setError(null);
+                  setIsLoading(true);
+                  // Retry loading data
+                  window.location.reload();
+                }}
+              >
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Calculate dashboard statistics
+  const totalLoans = loanApplications.length;
+  const approvedLoans = loanApplications.filter(loan => loan.status === 'approved').length;
+  const pendingLoans = loanApplications.filter(loan => loan.status === 'pending').length;
+  const totalAmount = loanApplications
+    .filter(loan => loan.status === 'approved')
+    .reduce((sum, loan) => sum + loan.amount, 0);
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Farmer Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back, {farmerData?.name || 'Farmer'}
-          </p>
-        </div>
-        <Button asChild className="mt-4 md:mt-0">
-          <Link href="/apply">Apply for Loan</Link>
+    <div className="container py-6 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <h1 className="text-3xl font-bold tracking-tight">Farmer Dashboard</h1>
+        <Button asChild>
+          <Link href="/apply">Apply for a Loan</Link>
         </Button>
       </div>
-
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="text-sm font-medium">
+                Total Loans
+              </CardTitle>
+              <CardDescription>All loan applications</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalLoans}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="text-sm font-medium">
+                Approved Loans
+              </CardTitle>
+              <CardDescription>Loans ready for disbursement</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{approvedLoans}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="text-sm font-medium">
+                Pending Applications
+              </CardTitle>
+              <CardDescription>Awaiting approval</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingLoans}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="text-sm font-medium">
+                Total Loan Amount
+              </CardTitle>
+              <CardDescription>Approved loans</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="loans">Loan Applications</TabsTrigger>
-          <TabsTrigger value="farm">Farm Details</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
+          <TabsTrigger value="loans">My Loans</TabsTrigger>
+          <TabsTrigger value="repayments">Repayments</TabsTrigger>
+          <TabsTrigger value="calendar">Farm Calendar</TabsTrigger>
         </TabsList>
-
+        
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -281,18 +387,10 @@ export default function FarmerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {
-                    loanApplications.filter(
-                      (loan) => loan.status === "approved"
-                    ).length
-                  }
+                  {approvedLoans}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {
-                    loanApplications.filter((loan) => loan.status === "pending")
-                      .length
-                  }{" "}
-                  pending applications
+                  {pendingLoans} pending applications
                 </p>
               </CardContent>
             </Card>
@@ -329,6 +427,8 @@ export default function FarmerDashboard() {
                 </p>
               </CardContent>
             </Card>
+
+            <UpcomingPayments loans={loanApplications} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -367,6 +467,18 @@ export default function FarmerDashboard() {
                           {loan.status.charAt(0).toUpperCase() +
                             loan.status.slice(1)}
                         </Badge>
+                        {loan.status === "approved" && loan.approvalReason && (
+                          <div className="mt-2 text-sm text-green-700">
+                            <p className="font-medium">Approval Reason:</p>
+                            <p>{loan.approvalReason}</p>
+                          </div>
+                        )}
+                        {loan.status === "rejected" && loan.rejectionReason && (
+                          <div className="mt-2 text-sm text-red-700">
+                            <p className="font-medium">Rejection Reason:</p>
+                            <p>{loan.rejectionReason}</p>
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(loan.applicationDate).toLocaleDateString()}
                         </p>
@@ -389,7 +501,7 @@ export default function FarmerDashboard() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => setActiveTab("loans")}
+                    // onClick={() => setActiveTab("loans")}
                   >
                     View All Applications
                   </Button>
@@ -659,323 +771,61 @@ export default function FarmerDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="farm" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Farm Details</CardTitle>
-              <CardDescription>
-                Information about your farm and crops
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">
-                      Farm Information
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">Farm Size:</p>
-                        <p className="font-medium">
-                          {farmerData?.farmSize} hectares
-                        </p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">Location:</p>
-                        <p className="font-medium">{farmerData?.address}</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">State:</p>
-                        <p className="font-medium">{farmerData?.state}</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">LGA:</p>
-                        <p className="font-medium">{farmerData?.lga}</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">
-                          Irrigation System:
-                        </p>
-                        <p className="font-medium">
-                          {farmerData?.hasIrrigation ? "Yes" : "No"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Crops</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <Leaf className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {farmerData?.primaryCrop}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Primary Crop
-                          </p>
-                        </div>
-                      </div>
-
-                      {farmerData?.secondaryCrop && (
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <Leaf className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {farmerData?.secondaryCrop}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Secondary Crop
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">
-                      Farming History
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">Farming Since:</p>
-                        <p className="font-medium">2018</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">Last Harvest:</p>
-                        <p className="font-medium">September 2022</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">
-                          Yield (Last Season):
-                        </p>
-                        <p className="font-medium">3.2 tons/hectare</p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-muted-foreground">
-                          Revenue (Last Season):
-                        </p>
-                        <p className="font-medium">₦1,850,000</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Equipment</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center space-x-2">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                        <span>Tractor (Leased)</span>
-                      </li>
-                      <li className="flex items-center space-x-2">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                        <span>Irrigation Pumps</span>
-                      </li>
-                      <li className="flex items-center space-x-2">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                        <span>Storage Facility (100 sq m)</span>
-                      </li>
-                      <li className="flex items-center space-x-2">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                        <span>Processing Equipment</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <Button variant="outline" className="w-full">
-                  Update Farm Information
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="repayments">
+          <RepaymentsTab loans={loanApplications} />
         </TabsContent>
 
-        <TabsContent value="resources" className="space-y-4">
+        <TabsContent value="calendar">
           <Card>
             <CardHeader>
-              <CardTitle>Agricultural Resources</CardTitle>
-              <CardDescription>Helpful resources for farmers</CardDescription>
+              <CardTitle>Farming Calendar</CardTitle>
+              <CardDescription>
+                Upcoming activities for your crops
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Farming Guides</h3>
-                  <ul className="space-y-4">
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-start hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                          <Leaf className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {farmerData?.primaryCrop} Cultivation Guide
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Best practices for growing {farmerData?.primaryCrop}{" "}
-                            in Nigeria
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-start hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                          <Droplets className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Irrigation Techniques</p>
-                          <p className="text-sm text-muted-foreground">
-                            Water management strategies for small farms
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-start hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
-                          <AlertCircle className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Pest Management</p>
-                          <p className="text-sm text-muted-foreground">
-                            Identifying and controlling common pests in{" "}
-                            {farmerData?.primaryCrop}
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">
-                    Financial Resources
-                  </h3>
-                  <ul className="space-y-4">
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-start hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                          <BarChart3 className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Farm Budgeting Template</p>
-                          <p className="text-sm text-muted-foreground">
-                            Plan your farm expenses and revenue
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-start hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
-                          <FileText className="h-5 w-5 text-indigo-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            Government Subsidies Guide
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Available subsidies for Nigerian farmers
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="#"
-                        className="flex items-start hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center mr-3">
-                          <Tractor className="h-5 w-5 text-cyan-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            Equipment Financing Options
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Ways to finance farm equipment purchases
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  </ul>
+                  <p className="font-medium">Planting Season</p>
+                  <p className="text-sm text-muted-foreground">
+                    Optimal time to plant {farmerData?.primaryCrop}
+                  </p>
+                  <p className="text-xs mt-1">March 15 - April 30</p>
                 </div>
               </div>
 
-              <div className="mt-8">
-                <h3 className="text-lg font-medium mb-4">Upcoming Webinars</h3>
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Modern Farming Techniques</h4>
-                      <Badge>June 15</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Learn about the latest farming techniques that can
-                      increase your yield by up to 30%.
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Register
-                    </Button>
-                  </div>
+              <div className="flex items-start space-x-3">
+                <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">Fertilizer Application</p>
+                  <p className="text-sm text-muted-foreground">
+                    Apply NPK fertilizer to {farmerData?.primaryCrop}
+                  </p>
+                  <p className="text-xs mt-1">May 10 - May 25</p>
+                </div>
+              </div>
 
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Market Access Strategies</h4>
-                      <Badge>June 22</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Discover how to access better markets and get higher
-                      prices for your produce.
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Register
-                    </Button>
-                  </div>
-
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Climate-Smart Agriculture</h4>
-                      <Badge>July 5</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Learn how to adapt your farming practices to changing
-                      climate conditions.
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Register
-                    </Button>
-                  </div>
+              <div className="flex items-start space-x-3">
+                <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">Harvest Period</p>
+                  <p className="text-sm text-muted-foreground">
+                    Expected harvest time for {farmerData?.primaryCrop}
+                  </p>
+                  <p className="text-xs mt-1">August 20 - September 15</p>
                 </div>
               </div>
             </CardContent>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setIsCalendarModalOpen(true)}
+              >
+                View Full Calendar
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
@@ -992,7 +842,7 @@ export default function FarmerDashboard() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Calendar
+              <ReactCalendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}

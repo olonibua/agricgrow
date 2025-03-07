@@ -87,8 +87,9 @@ export default function LoanApplicationPage() {
         if (savedTab) {
           setActiveTab(savedTab);
         }
-      } catch (e) {
-        console.error('Error parsing saved form data:', e);
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Error parsing saved form data';
+        console.error('Error parsing saved form data:', errorMessage);
       }
     }
     

@@ -5,6 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { updateLoanRiskExplanation } from "@/lib/appwrite";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Add these utility functions at the top of the file
 const normalizeRiskScore = (score: number): number => {
@@ -39,6 +42,17 @@ const getRiskLevelPrefix = (score: number): string => {
   return "Very high";
 };
 
+const getMonthsFromRepaymentPeriod = (repaymentPeriod?: string): number => {
+  if (!repaymentPeriod) return 6; // Default to 6 months
+  
+  // Extract the number from strings like "3_months", "6_months", etc.
+  const match = repaymentPeriod.match(/^(\d+)_/);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+  
+  return 6; // Default fallback
+};
 
 interface LoanApplication {
   $id: string;
@@ -69,6 +83,12 @@ interface LoanApplication {
   riskExplanation?: string;
   hasCollateral: boolean;
   hasPreviousLoan: boolean;
+  approvalReason?: string;
+  rejectionReason?: string;
+  approvalDate?: string;
+  rejectionDate?: string;
+  repaymentPeriodMonths?: number;
+  interestRate?: number;
 }
 
 interface ApplicationDetailsProps {
@@ -88,6 +108,23 @@ export default function ApplicationDetails({
   const [isRefreshing, setIsRefreshing] = useState(false);
   //@it-ignore
   const [currentApplication, setCurrentApplication] = useState(application);
+  
+  // Use the utility function to get the initial value from the string-based repaymentPeriod
+  const initialRepaymentMonths = application.repaymentPeriodMonths || 
+                                getMonthsFromRepaymentPeriod(application.repaymentPeriod);
+  
+  const [repaymentPeriodMonths, setRepaymentPeriodMonths] = useState(initialRepaymentMonths);
+  const [interestRate, setInterestRate] = useState(application.interestRate || 10);
+  
+  const handleApprove = () => {
+    const updatedApplication = {
+      ...application,
+      repaymentPeriodMonths: repaymentPeriodMonths,
+      interestRate: interestRate
+    };
+    
+    onApprove(updatedApplication);
+  };
 
     useEffect(() => {
       setCurrentApplication(application);
@@ -310,6 +347,78 @@ export default function ApplicationDetails({
           </div>
         </div>
 
+        {currentApplication.status === "pending" && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+            <h3 className="text-lg font-semibold mb-2">Loan Terms</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="repaymentPeriod">Repayment Period (Months)</Label>
+                {application.repaymentPeriod && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    <strong>Farmer requested:</strong> {application.repaymentPeriod.replace('_', ' ')}
+                  </p>
+                )}
+                <Select 
+                  value={repaymentPeriodMonths.toString()} 
+                  onValueChange={(value) => setRepaymentPeriodMonths(parseInt(value))}
+                >
+                  <SelectTrigger id="repaymentPeriod">
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3">3 Months</SelectItem>
+                    <SelectItem value="6">6 Months</SelectItem>
+                    <SelectItem value="9">9 Months</SelectItem>
+                    <SelectItem value="12">12 Months</SelectItem>
+                    <SelectItem value="18">18 Months</SelectItem>
+                    <SelectItem value="24">24 Months</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Align with harvest cycle: {formatDate(application.expectedHarvestDate)}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="interestRate">Interest Rate (%)</Label>
+                <Input
+                  id="interestRate"
+                  type="number"
+                  value={interestRate}
+                  onChange={(e) => setInterestRate(parseFloat(e.target.value))}
+                  min={1}
+                  max={30}
+                  step={0.5}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentApplication.status === "approved" && (
+          <div className="mt-4 p-3 bg-green-50 rounded-md border border-green-200">
+            <h4 className="font-medium text-green-800">Approval Reason</h4>
+            <p className="text-sm text-green-700">
+              {currentApplication.approvalReason || "Application has been approved."}
+            </p>
+            <p className="text-xs text-green-600 mt-1">
+              Approved on: {new Date(currentApplication.approvalDate || "").toLocaleDateString()}
+            </p>
+          </div>
+        )}
+
+        {currentApplication.status === "rejected" && (
+          <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200">
+            <h4 className="font-medium text-red-800">Rejection Reason</h4>
+            <p className="text-sm text-red-700">
+              {currentApplication.rejectionReason || "Application has been rejected."}
+            </p>
+            <p className="text-xs text-red-600 mt-1">
+              Rejected on: {new Date(currentApplication.rejectionDate || "").toLocaleDateString()}
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-end mt-2">
           <Button
             variant="outline"
@@ -324,7 +433,7 @@ export default function ApplicationDetails({
       <CardFooter className="flex justify-end gap-4">
         {application.status === "pending" && (
           <>
-            <Button variant="default" onClick={() => onApprove(application)}>
+            <Button variant="default" onClick={handleApprove}>
               Approve Application
             </Button>
             <Button variant="outline" onClick={() => onReject(application)}>
