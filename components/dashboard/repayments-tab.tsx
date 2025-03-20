@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import Link from "next/link";
-
+import { LoanApplication } from "@/types/loan";
 
 interface RepaymentsTabProps {
-  loans: any[]; // Using any[] to avoid type conflicts
+  loans: LoanApplication[]; // Using any[] to avoid type conflicts
 }
 
 export default function RepaymentsTab({ loans }: RepaymentsTabProps) {

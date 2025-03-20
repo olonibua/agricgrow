@@ -106,13 +106,13 @@ export default function RepaymentSchedulePage() {
                   className="rounded-md border"
                   modifiers={{
                     paid: Object.entries(paymentDates)
-                      .filter(([_dateStr, data]) => data.status === 'paid')
+                      .filter(([, data]) => data.status === 'paid')
                       .map(([date]) => new Date(date)),
                     pending: Object.entries(paymentDates)
-                      .filter(([_dateStr, data]) => data.status === 'pending')
+                      .filter(([, data]) => data.status === 'pending')
                       .map(([date]) => new Date(date)),
                     overdue: Object.entries(paymentDates)
-                      .filter(([_dateStr, data]) => data.status === 'overdue')
+                      .filter(([, data]) => data.status === 'overdue')
                       .map(([date]) => new Date(date)),
                   }}
                   modifiersStyles={{
