@@ -24,7 +24,9 @@ AgriGrow Finance is a platform connecting microfinance institutions (MFIs) with 
 - No duplicate type definitions across files
 - Always export interfaces used across multiple files
 
+
 ### Code Quality
+- **Always use &apos; instead of &quot; for strings**
 - **No undefined types**: Never use `(error)` as a catch block of a try statement or any other error emitting component in code
 - **Always define error types**: All catch blocks must use `(error: unknown)` and properly type-check the error
 - **Error handling pattern**: Always follow this pattern:
@@ -39,6 +41,19 @@ AgriGrow Finance is a platform connecting microfinance institutions (MFIs) with 
 - **Proper error handling**: Include try/catch blocks for async operations
 - **Type safety**: Use proper TypeScript types for all variables and function parameters
 - **⚠️ WARNING: No unused state variables**: Don't declare state variables (useState) without using them in the component. If you declare `setIsLoading`, you must use it in the UI (e.g., showing a loading indicator). Unused state variables cause errors during Vercel deployment.
+- **⚠️ WARNING: Avoid using `any` type**: Never use the `any` type as it defeats TypeScript's type checking. Instead:
+  ```typescript
+  // ❌ Bad
+  const data: any = response.data;
+  
+  // ✅ Good
+  const data: Record<string, unknown> = response.data;
+  // Or use more specific types like:
+  const data: CustomType = response.data;
+  ```
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 
 ### Vercel Deployment Compliance
 - **Client Components**: Add 'use client' directive to components using hooks

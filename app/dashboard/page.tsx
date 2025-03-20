@@ -17,6 +17,7 @@ import { formatCurrency} from "@/lib/utils";
 import UpcomingPayments from '@/components/dashboard/upcoming-payments';
 import RepaymentsTab from '@/components/dashboard/repayments-tab';
 import { checkOverduePayments } from '@/lib/repayment';
+import { LoanApplication } from '@/types/loan';
 
 // Define interfaces for type safety
 interface FarmerData {
@@ -33,32 +34,6 @@ interface FarmerData {
   secondaryCrop?: string;
   hasIrrigation?: boolean;
   creditScore?: number;
-}
-
-interface LoanApplication {
-  $id: string;
-  amount: number;
-  purpose: string;
-  status: 'pending' | 'approved' | 'rejected';
-  applicationDate: string;
-  cropType: string;
-  farmSize: number;
-  riskScore: number;
-  riskExplanation?: string;
-  approvalReason?: string;
-  rejectionReason?: string;
-  repaymentSchedule?: {
-    id: string;
-    loanId: string;
-    dueDate: string;
-    amount: number;
-    status: 'pending' | 'paid' | 'overdue';
-    paymentDate?: string;
-    paymentMethod?: string;
-    transactionId?: string;
-  }[];
-  interestRate: number;
-  repaymentPeriodMonths: number;
 }
 
 export default function FarmerDashboard() {
@@ -428,7 +403,7 @@ export default function FarmerDashboard() {
               </CardContent>
             </Card>
 
-            <UpcomingPayments loans={loanApplications} />
+            <UpcomingPayments loans={loanApplications } />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -451,7 +426,7 @@ export default function FarmerDashboard() {
                           ₦{loan.amount.toLocaleString()}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {loan.purpose.substring(0, 30)}...
+                          {loan.purpose?.substring(0, 30) || "No purpose specified"}...
                         </p>
                       </div>
                       <div className="text-right">
@@ -470,17 +445,17 @@ export default function FarmerDashboard() {
                         {loan.status === "approved" && loan.approvalReason && (
                           <div className="mt-2 text-sm text-green-700">
                             <p className="font-medium">Approval Reason:</p>
-                            <p>{loan.approvalReason}</p>
+                            <p>{String(loan.approvalReason)}</p>
                           </div>
                         )}
                         {loan.status === "rejected" && loan.rejectionReason && (
                           <div className="mt-2 text-sm text-red-700">
                             <p className="font-medium">Rejection Reason:</p>
-                            <p>{loan.rejectionReason}</p>
+                            <p>{loan.rejectionReason as string}</p>
                           </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(loan.applicationDate).toLocaleDateString()}
+                          {new Date(loan.applicationDate as string).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -643,7 +618,7 @@ export default function FarmerDashboard() {
                               <p className="text-sm text-muted-foreground">
                                 Applied on{" "}
                                 {new Date(
-                                  loan.applicationDate
+                                  loan.applicationDate as string
                                 ).toLocaleDateString()}
                               </p>
                             </div>

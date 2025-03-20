@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { RepaymentSchedule } from "@/types/loan";
+import { RepaymentSchedule, LoanApplication } from "@/types/loan";
 
 // Use the same LoanApplication type that's used in the dashboard
 interface UpcomingPaymentsProps {
-  loans: any[]; // Change to any[] to avoid type conflicts
+  loans: LoanApplication[]; // Change to any[] to avoid type conflicts
 }
 
 export default function UpcomingPayments({ loans }: UpcomingPaymentsProps) {

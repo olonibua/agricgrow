@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { LoanApplication } from '@/types/loan';
 
 interface RepaymentsTabProps {
-  applications: any[]; // Using any[] to avoid type conflicts
+    applications: LoanApplication[]; // Using any[] to avoid type conflicts
 }
 
 export default function RepaymentsTab({ applications }: RepaymentsTabProps) {

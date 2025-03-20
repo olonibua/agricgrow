@@ -9,12 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getLoanApplication } from "@/lib/appwrite";
-import { RepaymentSchedule } from '@/types/loan';
+import { RepaymentSchedule, LoanApplication } from '@/types/loan';
 
 export default function RepaymentSchedulePage() {
   const params = useParams();
   const router = useRouter();
-  const [loan, setLoan] = useState<any>(null);
+  const [loan, setLoan] = useState<LoanApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -25,7 +25,7 @@ export default function RepaymentSchedulePage() {
       try {
         setLoading(true);
         const loanData = await getLoanApplication(params.id as string);
-        setLoan(loanData);
+        setLoan(loanData as unknown as LoanApplication);
         setLoading(false);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Error fetching loan details';
@@ -106,13 +106,13 @@ export default function RepaymentSchedulePage() {
                   className="rounded-md border"
                   modifiers={{
                     paid: Object.entries(paymentDates)
-                      .filter(([_, data]) => data.status === 'paid')
+                      .filter(([_dateStr, data]) => data.status === 'paid')
                       .map(([date]) => new Date(date)),
                     pending: Object.entries(paymentDates)
-                      .filter(([_, data]) => data.status === 'pending')
+                      .filter(([_dateStr, data]) => data.status === 'pending')
                       .map(([date]) => new Date(date)),
                     overdue: Object.entries(paymentDates)
-                      .filter(([_, data]) => data.status === 'overdue')
+                      .filter(([_dateStr, data]) => data.status === 'overdue')
                       .map(([date]) => new Date(date)),
                   }}
                   modifiersStyles={{

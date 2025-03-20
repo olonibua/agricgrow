@@ -23,7 +23,8 @@ export default function RepaymentsTab({ loans }: RepaymentsTabProps) {
           <div className="text-center">
             <h3 className="font-medium text-lg mb-2">No Approved Loans</h3>
             <p className="text-muted-foreground mb-4">
-              You don't have any approved loans with repayment schedules yet.
+              You don&apos;t have any approved loans with repayment schedules
+              yet.
             </p>
             <Button asChild>
               <Link href="/apply">Apply for a Loan</Link>
@@ -38,9 +39,10 @@ export default function RepaymentsTab({ loans }: RepaymentsTabProps) {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Approved Loans</h2>
       <p className="text-muted-foreground">
-        Click on "View Repayment Plan" to see the detailed payment schedule for each loan.
+        Click on &quot;View Repayment Plan&quot; to see the detailed payment
+        schedule for each loan.
       </p>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {approvedLoans.map(loan => (
           <Card key={loan.$id}>

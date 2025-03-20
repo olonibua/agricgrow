@@ -1,5 +1,5 @@
 import { Client, Account, Databases, ID, Query, Storage } from 'appwrite';
-
+import { RepaymentSchedule } from '@/types/loan';
 // Initialize the Appwrite client
 const client = new Client()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '')
@@ -263,7 +263,7 @@ export async function getAllLoanApplications() {
   }
 }
 
-export async function updateLoanApplication(loanId: string, data: Record<string, any>) {
+export async function updateLoanApplication(loanId: string, data: Record<string, unknown>) {
   try {
     // If repaymentSchedule exists in the data, stringify it
     if (data.repaymentSchedule) {
@@ -416,7 +416,7 @@ export async function updateLoanRepayment(loanId: string, repaymentId: string, d
     );
     
     // Update the specific repayment in the repaymentSchedule array
-    const updatedRepaymentSchedule = loan.repaymentSchedule.map((repayment: any) => {
+    const updatedRepaymentSchedule = loan.repaymentSchedule.map((repayment: RepaymentSchedule) => {
       if (repayment.id === repaymentId) {
         return { ...repayment, ...data };
       }

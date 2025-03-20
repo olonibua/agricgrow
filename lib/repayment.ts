@@ -67,7 +67,7 @@ export function generateRepaymentSchedule(
  * @param loans Array of loan applications to check
  * @returns Updated loans with overdue payments marked
  */
-export function checkOverduePayments<T extends { repaymentSchedule?: any[] }>(loans: T[]): T[] {
+export function checkOverduePayments<T extends { repaymentSchedule?: RepaymentSchedule[] }>(loans: T[]): T[] {
   const today = new Date();
   
   return loans.map(loan => {
