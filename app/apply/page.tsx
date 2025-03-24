@@ -69,6 +69,8 @@ export default function LoanApplicationPage() {
     hasPreviousLoan: false,
     agreeToTerms: false
   });
+
+  console.log("Form data:", formData);
   
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -193,8 +195,18 @@ export default function LoanApplicationPage() {
       riskFactors.push("Existing loan obligations may affect repayment capacity");
     }
     
-    if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType as string)) {
-      riskFactors.push(`${formData.cropType} cultivation without irrigation poses crop failure risk`);
+    // Farming type specific risk factors
+    if (formData.farmingType === 'crop' || formData.farmingType === 'mixed') {
+      if (!formData.hasIrrigation && ['rice', 'tomato'].includes(formData.cropType as string)) {
+        riskFactors.push(`${formData.cropType} cultivation without irrigation poses crop failure risk`);
+      }
+    }
+    
+    if (formData.farmingType === 'livestock') {
+      const highRiskLivestock = ['poultry', 'fish']; // Example of potentially higher risk livestock
+      if (highRiskLivestock.includes(formData.livestockType as string)) {
+        riskFactors.push(`${formData.livestockType} farming carries specific disease and market risks`);
+      }
     }
     
     // Join risk factors or provide default message
@@ -247,11 +259,23 @@ export default function LoanApplicationPage() {
         else if (loanToRevenueRatio > 0.5) score += 5;
         else if (loanToRevenueRatio < 0.3) score -= 10;
         
-        // Irrigation reduces risk for water-dependent crops
-        if (formData.hasIrrigation) {
-          score -= 10;
-        } else if (['rice', 'tomato'].includes(formData.cropType as string)) {
-          score += 15; // Higher risk for water-dependent crops without irrigation
+        // Farming type specific risk adjustments
+        if (formData.farmingType === 'crop' || formData.farmingType === 'mixed') {
+          // Irrigation reduces risk for water-dependent crops
+          if (formData.hasIrrigation) {
+            score -= 10;
+          } else if (['rice', 'tomato'].includes(formData.cropType as string)) {
+            score += 15; // Higher risk for water-dependent crops without irrigation
+          }
+        }
+        
+        if (formData.farmingType === 'livestock') {
+          // Livestock specific risk factors
+          // Add adjustments based on livestock type if needed
+          const highRiskLivestock = ['poultry', 'fish']; // Example of potentially higher risk livestock
+          if (highRiskLivestock.includes(formData.livestockType as string)) {
+            score += 5;
+          }
         }
         
         // Collateral reduces risk
@@ -292,17 +316,21 @@ export default function LoanApplicationPage() {
         userId: userProfile.userId,
         fullName: userProfile.name || formData.fullName,
         amount: parseFloat(formData.amount),
-        cropType: formData.cropType,
+        
+        // Handle different farming types
+        farmingType: formData.farmingType,
+        cropType: formData.farmingType === 'crop' || formData.farmingType === 'mixed' ? formData.cropType : '',
+        livestockType: formData.farmingType === 'livestock' || formData.farmingType === 'mixed' ? formData.livestockType : '',
+        
         farmSize: parseFloat(formData.farmSize),
         riskScore: riskScore,
-        riskExplanation: riskExplanation, // Make sure this is included
+        riskExplanation: riskExplanation,
         email: formData.email || userProfile.email,
         phone: formData.phone || userProfile.phone,
         address: formData.address || userProfile.address,
         lga: formData.lga || userProfile.lga,
         state: formData.state || userProfile.state,
         purpose: formData.purpose,
-        farmingType: formData.farmingType,
         farmLocation: formData.farmLocation,
         hasIrrigation: formData.hasIrrigation,
         expectedHarvestDate: formData.expectedHarvestDate,
